@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button"
+import prisma from "../../lib/prisma"
 
-export default function Page() {
+export default async function Page() {
+  const users = await prisma.user.findMany();
   return (
     <main className="min-h-screen bg-background text-foreground p-6 md:p-16 max-w-[1440px] mx-auto space-y-16">
       {/* Header & Brand Identity */}
@@ -116,6 +118,20 @@ export default function Page() {
           </div>
         </div>
       </section>
+
+      <div className="min-h-screen mt-3 bg-gray-50 flex flex-col items-center justify-center -mt-16">
+      <h1 className="text-4xl font-bold mb-8 font-[family-name:var(--font-geist-sans)] text-[#333333]">
+        Superblog
+      </h1>
+      <ol className="">
+        {users.map((user) => (
+          <li key={user.id} className="mb-2 text-amber-600 font-bold">
+            {user.name}
+          </li>
+        ))}
+      </ol>
+    </div>
+
     </main>
   )
 }
