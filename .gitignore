@@ -38,3 +38,5 @@ next-env.d.ts
 /src/app/generated/prisma
 
 PRISMA_WORKFLOW.md
+
+notes.txt
