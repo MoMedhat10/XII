@@ -1,26 +1,27 @@
 "use client"
 
-import * as React from "react"
 import Link from "next/link"
-import { useForm } from "react-hook-form"
+import { useForm , useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { registerSchema, type RegisterInput } from "@/app/(auth)/_utils/schema"
 import { Input } from "@/components/ui/input"
 import { PasswordInput } from "@/components/ui/password-input"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
-import { AlertCircle, CheckCircle2 } from "lucide-react"
+import { AlertCircle } from "lucide-react"
+import { registerUser } from "@/app/(auth)/_actions"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 export function RegisterForm() {
-  const [isSubmitting, setIsSubmitting] = React.useState(false)
-  const [submitSuccess, setSubmitSuccess] = React.useState(false)
+  const router = useRouter();
 
-  const {
-    register,
-    handleSubmit,
-    watch,
-    formState: { errors },
-  } = useForm<RegisterInput>({
+ const {
+  register,
+  handleSubmit,
+  control,
+  formState: { errors , isSubmitting },
+} = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
       username: "",
@@ -31,7 +32,11 @@ export function RegisterForm() {
     },
   })
 
-  const watchPassword = watch("password", "")
+  const watchPassword = useWatch({
+  control,
+  name: "password",
+  defaultValue: "",
+})
 
   // Calculate password strength rating (0 - 4)
   let passwordStrength = 0
@@ -40,17 +45,18 @@ export function RegisterForm() {
   if (/[0-9]/.test(watchPassword)) passwordStrength++
   if (/[^a-zA-Z0-9]/.test(watchPassword)) passwordStrength++
 
-  const strengthLabels = ["WEAK", "FAIR", "GOOD", "STRONG"]
+  const strengthLabels = ["WEAK", "FAIR", "GOOD", "STRONG"] as const 
 
   const onSubmit = async (data: RegisterInput) => {
-    setIsSubmitting(true)
-    setSubmitSuccess(false)
+    const result = await registerUser(data);
 
-    // Simulated UI validation submission (ready for auth backend)
-    await new Promise((resolve) => setTimeout(resolve, 800))
-    console.log("Register Form Submitted (UI Mode):", data)
-    setIsSubmitting(false)
-    setSubmitSuccess(true)
+    if(!result.success) {
+      toast.error(result.message);
+      return;
+    }
+
+    toast.success(result.message);
+    router.push("/");
   }
 
   return (
@@ -68,13 +74,7 @@ export function RegisterForm() {
         </p>
       </div>
 
-      {/* Success Banner (UI Demo) */}
-      {submitSuccess && (
-        <div className="mb-6 p-3 border-2 border-[#B08D57] bg-[#B08D57]/10 flex items-center gap-2 text-xs font-mono text-foreground">
-          <CheckCircle2 className="size-4 text-[#B08D57] shrink-0" />
-          <span>REGISTRATION VALIDATED // READY FOR AUTH BACKEND</span>
-        </div>
-      )}
+      
 
       {/* Register Form */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
@@ -227,7 +227,7 @@ export function RegisterForm() {
             />
             <label
               htmlFor="terms"
-              className="text-xs text-muted-foreground cursor-pointer select-none leading-tight"
+              className="text-xs text-muted-foreground cursor-pointer mt-0.5 select-none leading-tight"
             >
               I agree to the Terms of Service and Privacy Policy
             </label>

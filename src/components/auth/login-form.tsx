@@ -1,6 +1,5 @@
 "use client"
 
-import * as React from "react"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -9,16 +8,18 @@ import { Input } from "@/components/ui/input"
 import { PasswordInput } from "@/components/ui/password-input"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
-import { AlertCircle, CheckCircle2 } from "lucide-react"
+import { AlertCircle } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { loginUser } from "@/app/(auth)/_actions"
+import { toast } from "sonner"
 
 export function LoginForm() {
-  const [isSubmitting, setIsSubmitting] = React.useState(false)
-  const [submitSuccess, setSubmitSuccess] = React.useState(false)
+  const router = useRouter();
 
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors , isSubmitting },
   } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -29,14 +30,14 @@ export function LoginForm() {
   })
 
   const onSubmit = async (data: LoginInput) => {
-    setIsSubmitting(true)
-    setSubmitSuccess(false)
+      const result = await loginUser(data);
 
-    // Simulated UI validation submission (ready for auth backend)
-    await new Promise((resolve) => setTimeout(resolve, 800))
-    console.log("Login Form Submitted (UI Mode):", data)
-    setIsSubmitting(false)
-    setSubmitSuccess(true)
+      if(!result.success){
+        toast.error(result.message);
+        return;
+      }
+      toast.success(result.message);
+      router.push("/");
   }
 
   return (
@@ -53,14 +54,6 @@ export function LoginForm() {
           Welcome back. Access your luxury timepiece portfolio.
         </p>
       </div>
-
-      {/* Success Banner (UI Demo) */}
-      {submitSuccess && (
-        <div className="mb-6 p-3 border-2 border-[#B08D57] bg-[#B08D57]/10 flex items-center gap-2 text-xs font-mono text-foreground">
-          <CheckCircle2 className="size-4 text-[#B08D57] shrink-0" />
-          <span>CREDENTIALS VALIDATED // READY FOR AUTH BACKEND</span>
-        </div>
-      )}
 
       {/* Login Form */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
