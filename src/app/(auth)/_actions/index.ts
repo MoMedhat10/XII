@@ -111,7 +111,7 @@ export const loginUser = async (data: LoginInput): AuthRes => {
             }
         }
 
-        const { identifier, password } = result.data;
+        const { identifier, password , remember } = result.data;
 
         const existingUser = await prisma.user.findFirst({
             where: {
@@ -144,7 +144,7 @@ export const loginUser = async (data: LoginInput): AuthRes => {
             }
         }
 
-        await createSession(existingUser.id);
+        await createSession(existingUser.id , remember);
 
         return {
             success: true,
@@ -339,7 +339,7 @@ export const logout = async (): AuthRes => {
             success: true,
             message: "Logged out successfully",
         }
-        
+
     } catch (error) {
         console.log("error => ", error);
         return {
