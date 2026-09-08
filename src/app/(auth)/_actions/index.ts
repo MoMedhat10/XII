@@ -1,10 +1,12 @@
 "use server"
 
+import { cookies } from "next/headers"
 import prisma from "../../../../lib/prisma"
 import { sendVerificationEmail } from "../_utils/email"
 import { LoginInput, loginSchema, RegisterInput, registerSchema } from "../_utils/schema"
 import bcrypt from "bcryptjs"
 import crypto from "crypto"
+import { createSession } from "../_utils/session"
 
 const SALT = 10;
 
@@ -127,6 +129,14 @@ export const loginUser = async (data: LoginInput): AuthRes => {
             }
         }
 
+        const passwordMatch = await bcrypt.compare(password, existingUser.passwordHash);
+        if (!passwordMatch) {
+            return {
+                success: false,
+                message: "Invalid credentials",
+            }
+        }
+
         if (!existingUser.emailVerifiedAt) {
             return {
                 success: false,
@@ -134,14 +144,7 @@ export const loginUser = async (data: LoginInput): AuthRes => {
             }
         }
 
-        const passwordMatch = await bcrypt.compare(password, existingUser.passwordHash);
-
-        if (!passwordMatch) {
-            return {
-                success: false,
-                message: "Invalid credentials",
-            }
-        }
+        await createSession(existingUser.id);
 
         return {
             success: true,
@@ -307,6 +310,41 @@ export const resendEmailVerificationCode = async (id: string): AuthRes => {
         return {
             success: false,
             message: "Something went wrong!",
+        }
+    }
+}
+
+
+export const logout = async (): AuthRes => {
+    try {
+        const cookieStore = await cookies();
+        const sessionId = cookieStore.get("xii_session")?.value;
+
+        if (!sessionId) {
+            return {
+                success: false,
+                message: "No active session found",
+            }
+        }
+
+        await prisma.session.deleteMany({
+            where: {
+                id: sessionId,
+            }
+        })
+
+        cookieStore.delete("xii_session");
+
+        return {
+            success: true,
+            message: "Logged out successfully",
+        }
+        
+    } catch (error) {
+        console.log("error => ", error);
+        return {
+            success: false,
+            message: "Something went wrong",
         }
     }
 }
