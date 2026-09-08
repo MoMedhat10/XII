@@ -33,10 +33,12 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  emailVerifiedAt DateTime?
   cart      Cart?
   session    Session[]
   orders    Order[]
   favorites FavoriteWatch[]
+  verificationCodes EmailVerificationCode[]
 }
 
 model Session {
@@ -46,6 +48,18 @@ model Session {
   createdAt DateTime @default(now())
 
  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+}
+
+model EmailVerificationCode {
+  id        String   @id @default(uuid())
+  userId    String
+  codeHash  String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
 }
 

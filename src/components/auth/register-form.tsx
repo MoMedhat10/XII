@@ -56,7 +56,7 @@ export function RegisterForm() {
     }
 
     toast.success(result.message);
-    router.push("/");
+    router.push(`/verify-email?id=${result?.data}`);
   }
 
   return (

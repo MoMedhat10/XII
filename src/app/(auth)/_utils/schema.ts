@@ -45,3 +45,13 @@ export const registerSchema = z
   })
 
 export type RegisterInput = z.infer<typeof registerSchema>
+
+export const verifyEmailSchema = z.object({
+  otp: z
+    .string()
+    .min(1, "Verification code is required")
+    .length(6, "Verification code must be exactly 6 digits")
+    .regex(/^\d{6}$/, "Verification code must contain only numbers"),
+})
+
+export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>
