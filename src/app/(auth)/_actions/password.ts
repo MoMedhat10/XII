@@ -1,0 +1,427 @@
+"use server"
+
+import { cookies } from "next/headers"
+import prisma from "../../../../lib/prisma"
+import { sendOTPEmail } from "../_utils/email"
+import { ForgotPasswordInput, forgotPasswordSchema, ResetPasswordInput, resetPasswordSchema } from "../_utils/schema"
+import bcrypt from "bcryptjs"
+import crypto from "crypto"
+import { createResetPasswordSession } from "../_utils/session"
+import { resetPasswordTemplate } from "../_utils/templates"
+
+const SALT = 10;
+
+type AuthRes = Promise<{ success: boolean, message: string, data?: string }>;
+
+
+export const forgotPassword = async (data: ForgotPasswordInput): AuthRes => {
+    try {
+        const result = forgotPasswordSchema.safeParse(data);
+
+        if (!result.success) {
+            return {
+                success: false,
+                message: "Invalid data"
+            }
+        }
+
+        const { email } = result.data;
+
+        const user = await prisma.user.findUnique({
+            where: {
+                email
+            }
+        });
+
+        if (!user) {
+            return {
+                success: false,
+                message: "Invalid email"
+            }
+        }
+
+        await prisma.verificationCode.deleteMany({
+            where: {
+                userId: user.id,
+                type: "PASSWORD_RESET"
+            },
+        });
+
+        const otp = crypto.randomInt(100000, 1000000).toString();
+
+        const otpHash = crypto
+            .createHash("sha256")
+            .update(otp)
+            .digest("hex");
+
+
+        await prisma.verificationCode.create({
+            data: {
+                userId: user.id,
+                codeHash: otpHash,
+                type: "PASSWORD_RESET",
+                expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+            }
+        });
+
+        const emailResult = await sendOTPEmail({ email, code: otp, template: resetPasswordTemplate });
+        if (!emailResult.success) {
+            return {
+                success: false,
+                message: "Failed to send email"
+            }
+        }
+
+        await createResetPasswordSession(user.id);
+
+        return {
+            success: true,
+            message: emailResult.message,
+        }
+
+    } catch (error) {
+        console.log("error => ", error);
+        return {
+            success: false,
+            message: "something went wrong!"
+        }
+    }
+}
+
+export const verifyForgotPasswordOTP = async ( otp: string ): AuthRes => {
+    try {
+        const cookieStore = await cookies();
+
+        const sessionId = cookieStore
+            .get("reset_password_session")
+            ?.value;
+
+        if (!sessionId) {
+            return {
+                success: false,
+                message: "No session found!",
+            };
+        }
+
+        const session =
+            await prisma.passwordResetSession.findUnique({
+                where: {
+                    id: sessionId,
+                },
+            });
+
+        if (!session) {
+            cookieStore.delete("reset_password_session");
+
+            return {
+                success: false,
+                message: "Session not found",
+            };
+        }
+
+        if (session.expiresAt <= new Date()) {
+            await prisma.passwordResetSession.delete({
+                where: {
+                    id: sessionId,
+                },
+            });
+
+            cookieStore.delete("reset_password_session");
+
+            return {
+                success: false,
+                message: "Session expired",
+            };
+        }
+
+        if (session.verifiedAt) {
+            return {
+                success: false,
+                message: "Code already verified",
+            };
+        }
+
+        const submittedHash = crypto
+            .createHash("sha256")
+            .update(otp)
+            .digest("hex");
+
+        const verificationCode =
+            await prisma.verificationCode.findFirst({
+                where: {
+                    userId: session.userId,
+                    codeHash: submittedHash,
+                    type: "PASSWORD_RESET",
+                },
+            });
+
+
+        if (!verificationCode) {
+            return {
+                success: false,
+                message: "Invalid or expired code",
+            };
+        }
+
+        if (verificationCode.expiresAt < new Date()) {
+            await prisma.verificationCode.delete({
+                where: {
+                    id: verificationCode.id,
+                },
+            });
+            return {
+                success: false,
+                message: "Invalid or expired code",
+            }
+        }
+
+        await prisma.$transaction([
+            prisma.verificationCode.deleteMany({
+                where: {
+                    userId: session.userId,
+                    type: "PASSWORD_RESET",
+                },
+            }),
+
+            prisma.passwordResetSession.update({
+                where: {
+                    id: sessionId,
+                },
+                data: {
+                    verifiedAt: new Date(),
+                },
+            }),
+        ]);
+
+        return {
+            success: true,
+            message: "Code verified successfully",
+        };
+    } catch (error) {
+        console.error("verifyForgotPasswordOTP error:", error);
+
+        return {
+            success: false,
+            message: "Something went wrong!",
+        };
+    }
+};
+
+
+export const resendForgotPasswordOTP = async (): AuthRes => {
+    try {
+        const cookieStore = await cookies();
+
+        const sessionId = cookieStore
+            .get("reset_password_session")
+            ?.value;
+
+        if (!sessionId) {
+            return {
+                success: false,
+                message: "No session found!",
+            };
+        }
+
+        const session =
+            await prisma.passwordResetSession.findUnique({
+                where: {
+                    id: sessionId,
+                },
+                include: {
+                    user: true,
+                },
+            });
+
+        if (!session) {
+            cookieStore.delete("reset_password_session");
+
+            return {
+                success: false,
+                message: "Session not found",
+            };
+        }
+
+        if (session.expiresAt <= new Date()) {
+            await prisma.passwordResetSession.delete({
+                where: {
+                    id: sessionId,
+                },
+            });
+
+            cookieStore.delete("reset_password_session");
+
+            return {
+                success: false,
+                message: "Session expired",
+            };
+        }
+
+        if (session.verifiedAt) {
+            return {
+                success: false,
+                message: "Password reset verification already completed",
+            };
+        }
+
+        await prisma.verificationCode.deleteMany({
+            where: {
+                userId: session.userId,
+                type: "PASSWORD_RESET",
+            },
+        });
+
+        const otp = crypto
+            .randomInt(100000, 1000000)
+            .toString();
+
+        const otpHash = crypto
+            .createHash("sha256")
+            .update(otp)
+            .digest("hex");
+
+        await prisma.verificationCode.create({
+            data: {
+                userId: session.userId,
+                codeHash: otpHash,
+                type: "PASSWORD_RESET",
+                expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+            },
+        });
+
+        const emailResult = await sendOTPEmail({
+            email: session.user.email,
+            code: otp,
+            template: resetPasswordTemplate,
+        });
+
+        if (!emailResult.success) {
+            return {
+                success: false,
+                message: "Failed to send email",
+            };
+        }
+
+        return {
+            success: true,
+            message: "A new verification code has been sent.",
+        };
+    } catch (error) {
+        console.error("resendForgotPasswordOTP error:", error);
+
+        return {
+            success: false,
+            message: "Something went wrong!",
+        };
+    }
+};
+
+export const resetPassword = async (data: ResetPasswordInput): AuthRes => {
+    try {
+        const result = resetPasswordSchema.safeParse(data);
+
+        if (!result.success) {
+            return {
+                success: false,
+                message: "Invalid data",
+            };
+        }
+
+        const { password } = result.data;
+
+        const cookieStore = await cookies();
+
+        const sessionId = cookieStore
+            .get("reset_password_session")
+            ?.value;
+
+        if (!sessionId) {
+            return {
+                success: false,
+                message: "No session found!",
+            };
+        }
+
+        const session =
+            await prisma.passwordResetSession.findUnique({
+                where: {
+                    id: sessionId,
+                },
+            });
+
+        if (!session) {
+            cookieStore.delete("reset_password_session");
+
+            return {
+                success: false,
+                message: "Session not found",
+            };
+        }
+
+        if (session.expiresAt <= new Date()) {
+            await prisma.passwordResetSession.delete({
+                where: {
+                    id: sessionId,
+                },
+            });
+
+            cookieStore.delete("reset_password_session");
+
+            return {
+                success: false,
+                message: "Session expired",
+            };
+        }
+
+        if (!session.verifiedAt) {
+            return {
+                success: false,
+                message:
+                    "Password reset verification not completed",
+            };
+        }
+
+        const hashedPassword = await bcrypt.hash(
+            password,
+            SALT
+        );
+
+        await prisma.$transaction(async (tx) => {
+            await tx.user.update({
+                where: {
+                    id: session.userId,
+                },
+                data: {
+                    passwordHash: hashedPassword,
+                },
+            });
+
+            // Invalidate all existing login sessions.
+            await tx.session.deleteMany({
+                where: {
+                    userId: session.userId,
+                },
+            });
+
+            // Consume the reset session.
+            await tx.passwordResetSession.delete({
+                where: {
+                    id: sessionId,
+                },
+            });
+        });
+
+        cookieStore.delete("reset_password_session");
+        return {
+            success: true,
+            message: "Password reset successfully",
+        };
+    } catch (error) {
+        console.error("resetPassword error:", error);
+
+        return {
+            success: false,
+            message: "Something went wrong!",
+        };
+    }
+};

@@ -2,11 +2,12 @@
 
 import { cookies } from "next/headers"
 import prisma from "../../../../lib/prisma"
-import { sendVerificationEmail } from "../_utils/email"
-import { LoginInput, loginSchema, RegisterInput, registerSchema } from "../_utils/schema"
+import { sendOTPEmail } from "../_utils/email"
+import {  LoginInput, loginSchema, RegisterInput, registerSchema } from "../_utils/schema"
 import bcrypt from "bcryptjs"
 import crypto from "crypto"
 import { createSession } from "../_utils/session"
+import { verifyEmailTemplate } from "../_utils/templates"
 
 const SALT = 10;
 
@@ -67,15 +68,16 @@ export const registerUser = async (data: RegisterInput): AuthRes => {
             .digest("hex");
 
 
-        await prisma.emailVerificationCode.create({
+        await prisma.verificationCode.create({
             data: {
                 userId: user.id,
                 codeHash: otpHash,
+                type: "EMAIL_VERIFICATION",
                 expiresAt: new Date(Date.now() + 10 * 60 * 1000)
             }
         })
 
-        const emailResult = await sendVerificationEmail({ email, code: otp })
+        const emailResult = await sendOTPEmail({ email, code: otp, template: verifyEmailTemplate })
 
         if (!emailResult.success) {
             return {
@@ -111,7 +113,7 @@ export const loginUser = async (data: LoginInput): AuthRes => {
             }
         }
 
-        const { identifier, password , remember } = result.data;
+        const { identifier, password, remember } = result.data;
 
         const existingUser = await prisma.user.findFirst({
             where: {
@@ -144,7 +146,7 @@ export const loginUser = async (data: LoginInput): AuthRes => {
             }
         }
 
-        await createSession(existingUser.id , remember);
+        await createSession(existingUser.id, remember);
 
         return {
             success: true,
@@ -159,6 +161,7 @@ export const loginUser = async (data: LoginInput): AuthRes => {
         }
     }
 }
+
 
 export const verifyEmail = async (id: string, otp: string): AuthRes => {
     try {
@@ -188,10 +191,11 @@ export const verifyEmail = async (id: string, otp: string): AuthRes => {
             .digest("hex");
 
         const verificationCode =
-            await prisma.emailVerificationCode.findFirst({
+            await prisma.verificationCode.findFirst({
                 where: {
                     userId: user.id,
                     codeHash: submittedHash,
+                    type: "EMAIL_VERIFICATION"
                 },
             });
 
@@ -203,7 +207,7 @@ export const verifyEmail = async (id: string, otp: string): AuthRes => {
         }
 
         if (new Date() > verificationCode.expiresAt) {
-            await prisma.emailVerificationCode.delete({
+            await prisma.verificationCode.delete({
                 where: {
                     id: verificationCode.id,
                 },
@@ -225,7 +229,7 @@ export const verifyEmail = async (id: string, otp: string): AuthRes => {
                 },
             }),
 
-            prisma.emailVerificationCode.delete({
+            prisma.verificationCode.delete({
                 where: {
                     id: verificationCode.id,
                 },
@@ -269,9 +273,10 @@ export const resendEmailVerificationCode = async (id: string): AuthRes => {
         }
 
 
-        await prisma.emailVerificationCode.deleteMany({
+        await prisma.verificationCode.deleteMany({
             where: {
                 userId: user.id,
+                type: "EMAIL_VERIFICATION"
             },
         });
 
@@ -283,15 +288,16 @@ export const resendEmailVerificationCode = async (id: string): AuthRes => {
             .digest("hex");
 
 
-        await prisma.emailVerificationCode.create({
+        await prisma.verificationCode.create({
             data: {
                 userId: user.id,
                 codeHash: otpHash,
+                type: "EMAIL_VERIFICATION",
                 expiresAt: new Date(Date.now() + 10 * 60 * 1000)
             }
         });
 
-        const emailResult = await sendVerificationEmail({ email: user.email, code: otp })
+        const emailResult = await sendOTPEmail({ email: user.email, code: otp, template: verifyEmailTemplate })
 
         if (!emailResult.success) {
             return {

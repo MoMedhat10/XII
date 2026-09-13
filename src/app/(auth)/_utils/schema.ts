@@ -14,6 +14,15 @@ export const loginSchema = z.object({
 
 export type LoginInput = z.infer<typeof loginSchema>
 
+export const forgotPasswordSchema = z.object({
+  email: z.string()
+  .min(1 , "Email is required")
+  .email("Please enter a valid email address")
+})
+
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+
+
 export const registerSchema = z
   .object({
     username: z
@@ -46,7 +55,7 @@ export const registerSchema = z
 
 export type RegisterInput = z.infer<typeof registerSchema>
 
-export const verifyEmailSchema = z.object({
+export const verifyOTPSchema = z.object({
   otp: z
     .string()
     .min(1, "Verification code is required")
@@ -54,4 +63,19 @@ export const verifyEmailSchema = z.object({
     .regex(/^\d{6}$/, "Verification code must contain only numbers"),
 })
 
-export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>
+export type VerifyOTPInput = z.infer<typeof verifyOTPSchema>
+
+
+export const resetPasswordSchema = z.object({
+  password: z
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .regex(/[A-Z]/, "Password must include at least one uppercase letter")
+      .regex(/[0-9]/, "Password must include at least one number"),
+    confirmPassword: z.string().min(1, "Please confirm your password"),
+}).refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+})
+
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;

@@ -1,9 +1,8 @@
 import { Resend } from 'resend'
-import { verifyEmailTemplate } from './templates';
 
 
 
-export const sendVerificationEmail = async ({email , code}: {email: string , code: string}) => {
+export const sendOTPEmail = async ({email , code , template}: {email: string , code: string , template: (OPT: string) => string}) => {
    try {
 
      const resend = new Resend(process.env.RESEND_API_KEY);
@@ -11,7 +10,7 @@ export const sendVerificationEmail = async ({email , code}: {email: string , cod
         from: 'Test <onboarding@resend.dev>',
         to: [email],
         subject: "XII Verification Code",
-        html: verifyEmailTemplate(code)
+        html: template(code)
      })
 
      if(error){
@@ -33,3 +32,6 @@ export const sendVerificationEmail = async ({email , code}: {email: string , cod
      }
    } 
 }
+
+
+

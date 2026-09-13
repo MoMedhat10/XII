@@ -95,12 +95,8 @@ export function LoginForm() {
               PASSWORD
             </label>
             <Link
-              href="#"
+              href="/forgot-password"
               className="text-xs text-[#B08D57] hover:underline"
-              onClick={(e) => {
-                e.preventDefault()
-                alert("Password reset flow will be enabled with backend integration.")
-              }}
             >
               Forgot password?
             </Link>
