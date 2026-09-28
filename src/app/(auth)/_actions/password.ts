@@ -9,6 +9,7 @@ import { createResetPasswordSession } from "../_utils/session"
 import { resetPasswordTemplate } from "../_utils/templates"
 import { generateOTPAndHashedOTP, getHashedOTP } from "../_utils/OTP"
 import { findUserByEmail } from "../_utils/user"
+import { createVerificationCode, deleteVerificationCodeById, deleteVerificationCodes, getVerificationCode } from "../_utils/verificationCode"
 
 const SALT = 10;
 
@@ -37,23 +38,11 @@ export const forgotPassword = async (data: ForgotPasswordInput): AuthRes => {
             }
         }
 
-        await prisma.verificationCode.deleteMany({
-            where: {
-                userId: user.id,
-                type: "PASSWORD_RESET"
-            },
-        });
+        await deleteVerificationCodes(user.id , "PASSWORD_RESET");
 
         const [otp, otpHash] = generateOTPAndHashedOTP();
 
-        await prisma.verificationCode.create({
-            data: {
-                userId: user.id,
-                codeHash: otpHash,
-                type: "PASSWORD_RESET",
-                expiresAt: new Date(Date.now() + 10 * 60 * 1000)
-            }
-        });
+        await createVerificationCode({ userId: user.id , codeHash: otpHash , type: "PASSWORD_RESET"});
 
         const emailResult = await sendOTPEmail({ email, code: otp, template: resetPasswordTemplate });
         if (!emailResult.success) {
@@ -134,14 +123,11 @@ export const verifyForgotPasswordOTP = async ( otp: string ): AuthRes => {
         
         const submittedHash = getHashedOTP(otp);
         
-        const verificationCode =
-            await prisma.verificationCode.findFirst({
-                where: {
-                    userId: session.userId,
-                    codeHash: submittedHash,
-                    type: "PASSWORD_RESET",
-                },
-            });
+        const verificationCode = await getVerificationCode({
+            userId: session.userId,
+            codeHash: submittedHash,
+            type: "PASSWORD_RESET",
+        })
 
 
         if (!verificationCode) {
@@ -152,11 +138,8 @@ export const verifyForgotPasswordOTP = async ( otp: string ): AuthRes => {
         }
 
         if (verificationCode.expiresAt < new Date()) {
-            await prisma.verificationCode.delete({
-                where: {
-                    id: verificationCode.id,
-                },
-            });
+            await deleteVerificationCodeById(verificationCode.id);
+
             return {
                 success: false,
                 message: "Invalid or expired code",
@@ -252,23 +235,15 @@ export const resendForgotPasswordOTP = async (): AuthRes => {
             };
         }
 
-        await prisma.verificationCode.deleteMany({
-            where: {
-                userId: session.userId,
-                type: "PASSWORD_RESET",
-            },
-        });
+        await deleteVerificationCodes(session.userId , "PASSWORD_RESET");
                
         const [otp, otpHash] = generateOTPAndHashedOTP();
 
-        await prisma.verificationCode.create({
-            data: {
-                userId: session.userId,
-                codeHash: otpHash,
-                type: "PASSWORD_RESET",
-                expiresAt: new Date(Date.now() + 10 * 60 * 1000),
-            },
-        });
+        await createVerificationCode({
+            userId: session.userId,
+            codeHash: otpHash,
+            type: "PASSWORD_RESET",
+        })
 
         const emailResult = await sendOTPEmail({
             email: session.user.email,

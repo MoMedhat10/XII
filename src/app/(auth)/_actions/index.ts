@@ -9,6 +9,7 @@ import { createSession } from "../_utils/session"
 import { verifyEmailTemplate } from "../_utils/templates"
 import { generateOTPAndHashedOTP, getHashedOTP } from "../_utils/OTP"
 import { createUser, findExistingUser, findUserById } from "../_utils/user"
+import { createVerificationCode, deleteVerificationCodeById, deleteVerificationCodes, getVerificationCode, updateUserStateTransaction } from "../_utils/verificationCode"
 
 
 
@@ -52,14 +53,11 @@ export const registerUser = async (data: RegisterInput): AuthRes => {
         
         const [otp, otpHash] = generateOTPAndHashedOTP();
         
-        await prisma.verificationCode.create({
-            data: {
-                userId: user.id,
-                codeHash: otpHash,
-                type: "EMAIL_VERIFICATION",
-                expiresAt: new Date(Date.now() + 10 * 60 * 1000)
-            }
-        })
+        await createVerificationCode({
+            userId: user.id,
+            codeHash: otpHash,
+            type: "EMAIL_VERIFICATION",
+        });
 
         const emailResult = await sendOTPEmail({ email, code: otp, template: verifyEmailTemplate })
 
@@ -160,14 +158,11 @@ export const verifyEmail = async (id: string, otp: string): AuthRes => {
 
         const submittedHash = getHashedOTP(otp);
         
-        const verificationCode =
-            await prisma.verificationCode.findFirst({
-                where: {
-                    userId: user.id,
-                    codeHash: submittedHash,
-                    type: "EMAIL_VERIFICATION"
-                },
-            });
+        const verificationCode = await getVerificationCode({
+            userId: user.id,
+            codeHash: submittedHash,
+            type: "EMAIL_VERIFICATION",
+        });
 
         if (!verificationCode) {
             return {
@@ -176,12 +171,8 @@ export const verifyEmail = async (id: string, otp: string): AuthRes => {
             };
         }
 
-        if (new Date() > verificationCode.expiresAt) {
-            await prisma.verificationCode.delete({
-                where: {
-                    id: verificationCode.id,
-                },
-            });
+        if (new Date() >= verificationCode.expiresAt) {
+            await deleteVerificationCodeById(verificationCode.id);
 
             return {
                 success: false,
@@ -189,22 +180,7 @@ export const verifyEmail = async (id: string, otp: string): AuthRes => {
             };
         }
 
-        await prisma.$transaction([
-            prisma.user.update({
-                where: {
-                    id: user.id,
-                },
-                data: {
-                    emailVerifiedAt: new Date(),
-                },
-            }),
-
-            prisma.verificationCode.delete({
-                where: {
-                    id: verificationCode.id,
-                },
-            }),
-        ]);
+        await updateUserStateTransaction(user.id, verificationCode.id);
 
         return {
             success: true,
@@ -239,23 +215,15 @@ export const resendEmailVerificationCode = async (id: string): AuthRes => {
         }
 
 
-        await prisma.verificationCode.deleteMany({
-            where: {
-                userId: user.id,
-                type: "EMAIL_VERIFICATION"
-            },
-        });
+        await deleteVerificationCodes(user.id , "EMAIL_VERIFICATION");
         
         const [otp, otpHash] = generateOTPAndHashedOTP();
         
-        await prisma.verificationCode.create({
-            data: {
-                userId: user.id,
-                codeHash: otpHash,
-                type: "EMAIL_VERIFICATION",
-                expiresAt: new Date(Date.now() + 10 * 60 * 1000)
-            }
-        });
+        await createVerificationCode({
+            userId: user.id,
+            codeHash: otpHash,
+            type: "EMAIL_VERIFICATION",
+        })
 
         const emailResult = await sendOTPEmail({ email: user.email, code: otp, template: verifyEmailTemplate })
 
