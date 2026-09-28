@@ -8,6 +8,7 @@ import bcrypt from "bcryptjs"
 import { createResetPasswordSession } from "../_utils/session"
 import { resetPasswordTemplate } from "../_utils/templates"
 import { generateOTPAndHashedOTP, getHashedOTP } from "../_utils/OTP"
+import { findUserByEmail } from "../_utils/user"
 
 const SALT = 10;
 
@@ -27,11 +28,7 @@ export const forgotPassword = async (data: ForgotPasswordInput): AuthRes => {
 
         const { email } = result.data;
 
-        const user = await prisma.user.findUnique({
-            where: {
-                email
-            }
-        });
+        const user = await findUserByEmail(email);
 
         if (!user) {
             return {

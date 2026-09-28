@@ -8,8 +8,9 @@ import bcrypt from "bcryptjs"
 import { createSession } from "../_utils/session"
 import { verifyEmailTemplate } from "../_utils/templates"
 import { generateOTPAndHashedOTP, getHashedOTP } from "../_utils/OTP"
+import { createUser, findExistingUser, findUserById } from "../_utils/user"
 
-const SALT = 10;
+
 
 type AuthRes = Promise<{ success: boolean, message: string, data?: string }>;
 
@@ -25,14 +26,7 @@ export const registerUser = async (data: RegisterInput): AuthRes => {
 
         const { username, email, password } = result.data;
 
-        const existingUser = await prisma.user.findFirst({
-            where: {
-                OR: [
-                    { username },
-                    { email }
-                ]
-            }
-        });
+        const existingUser = await findExistingUser(username, email);
 
         if (existingUser) {
             if (existingUser.username === username) {
@@ -50,15 +44,11 @@ export const registerUser = async (data: RegisterInput): AuthRes => {
             }
         }
 
-        const hashedPassword = await bcrypt.hash(password, SALT);
-
-        const user = await prisma.user.create({
-            data: {
-                username,
-                email,
-                passwordHash: hashedPassword,
-            }
-        })
+        const user = await createUser({
+            username,
+            email,
+            password,
+        });
         
         const [otp, otpHash] = generateOTPAndHashedOTP();
         
@@ -109,15 +99,8 @@ export const loginUser = async (data: LoginInput): AuthRes => {
 
         const { identifier, password, remember } = result.data;
 
-        const existingUser = await prisma.user.findFirst({
-            where: {
-                OR: [
-                    { username: identifier },
-                    { email: identifier }
-                ]
-            }
-        });
-
+        const existingUser = await findExistingUser(identifier, identifier);
+        
         if (!existingUser) {
             return {
                 success: false,
@@ -159,11 +142,7 @@ export const loginUser = async (data: LoginInput): AuthRes => {
 
 export const verifyEmail = async (id: string, otp: string): AuthRes => {
     try {
-        const user = await prisma.user.findUnique({
-            where: {
-                id,
-            },
-        });
+        const user = await findUserById(id);
 
         if (!user) {
             return {
@@ -243,11 +222,7 @@ export const verifyEmail = async (id: string, otp: string): AuthRes => {
 
 export const resendEmailVerificationCode = async (id: string): AuthRes => {
     try {
-        const user = await prisma.user.findUnique({
-            where: {
-                id,
-            },
-        });
+        const user = await findUserById(id);
 
         if (!user) {
             return {
