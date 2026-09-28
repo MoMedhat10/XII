@@ -5,9 +5,9 @@ import prisma from "../../../../lib/prisma"
 import { sendOTPEmail } from "../_utils/email"
 import {  LoginInput, loginSchema, RegisterInput, registerSchema } from "../_utils/schema"
 import bcrypt from "bcryptjs"
-import crypto from "crypto"
 import { createSession } from "../_utils/session"
 import { verifyEmailTemplate } from "../_utils/templates"
+import { generateOTPAndHashedOTP, getHashedOTP } from "../_utils/OTP"
 
 const SALT = 10;
 
@@ -59,15 +59,9 @@ export const registerUser = async (data: RegisterInput): AuthRes => {
                 passwordHash: hashedPassword,
             }
         })
-
-        const otp = crypto.randomInt(100000, 1000000).toString();
-
-        const otpHash = crypto
-            .createHash("sha256")
-            .update(otp)
-            .digest("hex");
-
-
+        
+        const [otp, otpHash] = generateOTPAndHashedOTP();
+        
         await prisma.verificationCode.create({
             data: {
                 userId: user.id,
@@ -185,11 +179,8 @@ export const verifyEmail = async (id: string, otp: string): AuthRes => {
             };
         }
 
-        const submittedHash = crypto
-            .createHash("sha256")
-            .update(otp)
-            .digest("hex");
-
+        const submittedHash = getHashedOTP(otp);
+        
         const verificationCode =
             await prisma.verificationCode.findFirst({
                 where: {
@@ -279,15 +270,9 @@ export const resendEmailVerificationCode = async (id: string): AuthRes => {
                 type: "EMAIL_VERIFICATION"
             },
         });
-
-        const otp = crypto.randomInt(100000, 1000000).toString();
-
-        const otpHash = crypto
-            .createHash("sha256")
-            .update(otp)
-            .digest("hex");
-
-
+        
+        const [otp, otpHash] = generateOTPAndHashedOTP();
+        
         await prisma.verificationCode.create({
             data: {
                 userId: user.id,

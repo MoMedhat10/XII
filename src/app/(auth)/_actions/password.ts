@@ -5,9 +5,9 @@ import prisma from "../../../../lib/prisma"
 import { sendOTPEmail } from "../_utils/email"
 import { ForgotPasswordInput, forgotPasswordSchema, ResetPasswordInput, resetPasswordSchema } from "../_utils/schema"
 import bcrypt from "bcryptjs"
-import crypto from "crypto"
 import { createResetPasswordSession } from "../_utils/session"
 import { resetPasswordTemplate } from "../_utils/templates"
+import { generateOTPAndHashedOTP, getHashedOTP } from "../_utils/OTP"
 
 const SALT = 10;
 
@@ -47,13 +47,7 @@ export const forgotPassword = async (data: ForgotPasswordInput): AuthRes => {
             },
         });
 
-        const otp = crypto.randomInt(100000, 1000000).toString();
-
-        const otpHash = crypto
-            .createHash("sha256")
-            .update(otp)
-            .digest("hex");
-
+        const [otp, otpHash] = generateOTPAndHashedOTP();
 
         await prisma.verificationCode.create({
             data: {
@@ -140,12 +134,9 @@ export const verifyForgotPasswordOTP = async ( otp: string ): AuthRes => {
                 message: "Code already verified",
             };
         }
-
-        const submittedHash = crypto
-            .createHash("sha256")
-            .update(otp)
-            .digest("hex");
-
+        
+        const submittedHash = getHashedOTP(otp);
+        
         const verificationCode =
             await prisma.verificationCode.findFirst({
                 where: {
@@ -270,15 +261,8 @@ export const resendForgotPasswordOTP = async (): AuthRes => {
                 type: "PASSWORD_RESET",
             },
         });
-
-        const otp = crypto
-            .randomInt(100000, 1000000)
-            .toString();
-
-        const otpHash = crypto
-            .createHash("sha256")
-            .update(otp)
-            .digest("hex");
+               
+        const [otp, otpHash] = generateOTPAndHashedOTP();
 
         await prisma.verificationCode.create({
             data: {
@@ -416,6 +400,7 @@ export const resetPassword = async (data: ResetPasswordInput): AuthRes => {
             success: true,
             message: "Password reset successfully",
         };
+        
     } catch (error) {
         console.error("resetPassword error:", error);
 
