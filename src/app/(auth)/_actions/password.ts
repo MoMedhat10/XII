@@ -1,17 +1,14 @@
 "use server"
 
 import { cookies } from "next/headers"
-import prisma from "../../../../lib/prisma"
 import { sendOTPEmail } from "../_utils/email"
 import { ForgotPasswordInput, forgotPasswordSchema, ResetPasswordInput, resetPasswordSchema } from "../_utils/schema"
-import bcrypt from "bcryptjs"
-import { createResetPasswordSession } from "../_utils/session"
 import { resetPasswordTemplate } from "../_utils/templates"
 import { generateOTPAndHashedOTP, getHashedOTP } from "../_utils/OTP"
 import { findUserByEmail } from "../_utils/user"
 import { createVerificationCode, deleteVerificationCodeById, deleteVerificationCodes, getVerificationCode } from "../_utils/verificationCode"
+import { createResetPasswordSession, deletePasswordSessionById, findPasswordSessionById, updateUserPassword, verifyResetPasswordSession } from "../_utils/passwordResetSession"
 
-const SALT = 10;
 
 type AuthRes = Promise<{ success: boolean, message: string, data?: string }>;
 
@@ -83,12 +80,7 @@ export const verifyForgotPasswordOTP = async ( otp: string ): AuthRes => {
             };
         }
 
-        const session =
-            await prisma.passwordResetSession.findUnique({
-                where: {
-                    id: sessionId,
-                },
-            });
+        const session = await findPasswordSessionById(sessionId);
 
         if (!session) {
             cookieStore.delete("reset_password_session");
@@ -100,12 +92,7 @@ export const verifyForgotPasswordOTP = async ( otp: string ): AuthRes => {
         }
 
         if (session.expiresAt <= new Date()) {
-            await prisma.passwordResetSession.delete({
-                where: {
-                    id: sessionId,
-                },
-            });
-
+            await deletePasswordSessionById(sessionId);
             cookieStore.delete("reset_password_session");
 
             return {
@@ -137,7 +124,7 @@ export const verifyForgotPasswordOTP = async ( otp: string ): AuthRes => {
             };
         }
 
-        if (verificationCode.expiresAt < new Date()) {
+        if (verificationCode.expiresAt <= new Date()) {
             await deleteVerificationCodeById(verificationCode.id);
 
             return {
@@ -146,23 +133,7 @@ export const verifyForgotPasswordOTP = async ( otp: string ): AuthRes => {
             }
         }
 
-        await prisma.$transaction([
-            prisma.verificationCode.deleteMany({
-                where: {
-                    userId: session.userId,
-                    type: "PASSWORD_RESET",
-                },
-            }),
-
-            prisma.passwordResetSession.update({
-                where: {
-                    id: sessionId,
-                },
-                data: {
-                    verifiedAt: new Date(),
-                },
-            }),
-        ]);
+        await verifyResetPasswordSession(sessionId , session.userId);
 
         return {
             success: true,
@@ -194,15 +165,7 @@ export const resendForgotPasswordOTP = async (): AuthRes => {
             };
         }
 
-        const session =
-            await prisma.passwordResetSession.findUnique({
-                where: {
-                    id: sessionId,
-                },
-                include: {
-                    user: true,
-                },
-            });
+        const session = await findPasswordSessionById(sessionId);
 
         if (!session) {
             cookieStore.delete("reset_password_session");
@@ -214,11 +177,7 @@ export const resendForgotPasswordOTP = async (): AuthRes => {
         }
 
         if (session.expiresAt <= new Date()) {
-            await prisma.passwordResetSession.delete({
-                where: {
-                    id: sessionId,
-                },
-            });
+            await deletePasswordSessionById(sessionId);
 
             cookieStore.delete("reset_password_session");
 
@@ -298,12 +257,7 @@ export const resetPassword = async (data: ResetPasswordInput): AuthRes => {
             };
         }
 
-        const session =
-            await prisma.passwordResetSession.findUnique({
-                where: {
-                    id: sessionId,
-                },
-            });
+        const session = await findPasswordSessionById(sessionId);
 
         if (!session) {
             cookieStore.delete("reset_password_session");
@@ -315,12 +269,7 @@ export const resetPassword = async (data: ResetPasswordInput): AuthRes => {
         }
 
         if (session.expiresAt <= new Date()) {
-            await prisma.passwordResetSession.delete({
-                where: {
-                    id: sessionId,
-                },
-            });
-
+            await deletePasswordSessionById(sessionId);
             cookieStore.delete("reset_password_session");
 
             return {
@@ -337,48 +286,23 @@ export const resetPassword = async (data: ResetPasswordInput): AuthRes => {
             };
         }
 
-        const hashedPassword = await bcrypt.hash(
+        await updateUserPassword({
+            userId: session.userId,
             password,
-            SALT
-        );
-
-        await prisma.$transaction(async (tx) => {
-            await tx.user.update({
-                where: {
-                    id: session.userId,
-                },
-                data: {
-                    passwordHash: hashedPassword,
-                },
-            });
-
-            // Invalidate all existing login sessions.
-            await tx.session.deleteMany({
-                where: {
-                    userId: session.userId,
-                },
-            });
-
-            // Consume the reset session.
-            await tx.passwordResetSession.delete({
-                where: {
-                    id: sessionId,
-                },
-            });
+            sessionId
         });
-
         cookieStore.delete("reset_password_session");
+
         return {
             success: true,
             message: "Password reset successfully",
         };
         
     } catch (error) {
-        console.error("resetPassword error:", error);
-
+        console.error("resetPassword error:", error); 
         return {
             success: false,
             message: "Something went wrong!",
         };
     }
-};
+}; 

@@ -8,16 +8,16 @@ type CreateVerificationCodeType = {
     type: VerificationCodeType;
 }
 
+const VERIFICATION_CODE_EXPIRATION_MS = 10 * 60 * 1000;
 
 export const createVerificationCode = async ({ userId, codeHash, type }: CreateVerificationCodeType) => {
-    const TEN_MINUTES_EXPIRATION = new Date(Date.now() + 10 * 60 * 1000);
 
     return prisma.verificationCode.create({
         data: {
             userId,
             codeHash,
             type,
-            expiresAt: TEN_MINUTES_EXPIRATION
+            expiresAt: new Date(Date.now() + VERIFICATION_CODE_EXPIRATION_MS)
         }
     })
 }
@@ -42,7 +42,7 @@ export const deleteVerificationCodeById = async (id: string) => {
 }
 
 
-export const updateUserStateTransaction = async (userId: string , verificationCodeId: string) => {
+export const verifyUserEmail = async (userId: string , verificationCodeId: string) => {
     return await prisma.$transaction([
             prisma.user.update({
                 where: {

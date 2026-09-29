@@ -1,15 +1,14 @@
 "use server"
 
 import { cookies } from "next/headers"
-import prisma from "../../../../lib/prisma"
 import { sendOTPEmail } from "../_utils/email"
 import {  LoginInput, loginSchema, RegisterInput, registerSchema } from "../_utils/schema"
 import bcrypt from "bcryptjs"
-import { createSession } from "../_utils/session"
+import { createSession, deleteSession } from "../_utils/session"
 import { verifyEmailTemplate } from "../_utils/templates"
 import { generateOTPAndHashedOTP, getHashedOTP } from "../_utils/OTP"
 import { createUser, findExistingUser, findUserById } from "../_utils/user"
-import { createVerificationCode, deleteVerificationCodeById, deleteVerificationCodes, getVerificationCode, updateUserStateTransaction } from "../_utils/verificationCode"
+import { createVerificationCode, deleteVerificationCodeById, deleteVerificationCodes, getVerificationCode, verifyUserEmail } from "../_utils/verificationCode"
 
 
 
@@ -180,14 +179,14 @@ export const verifyEmail = async (id: string, otp: string): AuthRes => {
             };
         }
 
-        await updateUserStateTransaction(user.id, verificationCode.id);
+        await verifyUserEmail(user.id, verificationCode.id);
 
         return {
             success: true,
             message: "Email verified successfully",
         };
     } catch (error) {
-        console.error("verifyEmail error:", error);
+        console.error("error => ", error);
 
         return {
             success: false,
@@ -261,12 +260,7 @@ export const logout = async (): AuthRes => {
             }
         }
 
-        await prisma.session.deleteMany({
-            where: {
-                id: sessionId,
-            }
-        })
-
+        await deleteSession(sessionId);
         cookieStore.delete("xii_session");
 
         return {

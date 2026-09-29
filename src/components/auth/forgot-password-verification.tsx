@@ -69,7 +69,7 @@ export default function ForgotPasswordVerification() {
                     VERIFY EMAIL
                 </h2>
                 <p className="text-xs text-muted-foreground mt-1">
-                    Enter the 6-digit authentication key sent to your inbox to verify your email.
+                    Enter the 6-digit authentication key sent to your inbox to complete reset password process.
                 </p>
             </div>
 

@@ -4,7 +4,6 @@ import { cookies } from "next/headers";
 
 const SEVEN_DAYS_IN_MS = 7 * 24 * 60 * 60 * 1000;
 const THIRTY_DAYS_IN_MS = 30 * 24 * 60 * 60 * 1000;
-const TEN_MINUTES = 10 * 60 * 1000;
 
 
 export const createSession = async (userId: string, rememberMe: boolean) => {
@@ -56,7 +55,7 @@ export const getCurrentUser = async () => {
         }
 
 
-        if (new Date() > session.expiresAt) {
+        if (new Date() >= session.expiresAt) {
             await prisma.session.delete({
                 where: {
                     id: session.id,
@@ -76,27 +75,10 @@ export const getCurrentUser = async () => {
 }
 
 
-export const createResetPasswordSession = async (userId: string) => {
-    const sessionId = crypto.randomBytes(32).toString("hex");
-    const expiresAt = new Date(Date.now() + TEN_MINUTES);
-
-    await prisma.passwordResetSession.create({
-        data: {
-            id: sessionId,
-            userId,
-            expiresAt,
-        },
-    });
-
-    const cookieStore = await cookies();
-
-    cookieStore.set("reset_password_session", sessionId, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        expires: expiresAt,
-    });
-
+export const deleteSession = async (sessionId: string) => {
+    return await prisma.session.deleteMany({
+            where: {
+                id: sessionId,
+            }
+        })
 }
-
