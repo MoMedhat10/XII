@@ -2,14 +2,43 @@
 
 import { cookies } from "next/headers"
 import { sendOTPEmail } from "../_utils/email"
-import {  LoginInput, loginSchema, RegisterInput, registerSchema } from "../_utils/schema"
+import { LoginInput, loginSchema, RegisterInput, registerSchema } from "../_utils/schema"
 import bcrypt from "bcryptjs"
 import { createSession, deleteSession } from "../_utils/session"
 import { verifyEmailTemplate } from "../_utils/templates"
 import { generateOTPAndHashedOTP, getHashedOTP } from "../_utils/OTP"
 import { createUser, findExistingUser, findUserById } from "../_utils/user"
 import { createVerificationCode, deleteVerificationCodeById, deleteVerificationCodes, getVerificationCode, verifyUserEmail } from "../_utils/verificationCode"
+import redis from "../../../../lib/redis";
 
+// simple rate limiting
+const rateLimit = async (
+    key: string,
+    limit: number,
+    windowSeconds: number
+) => {
+    const currentCount = await redis.incr(key);
+
+    if (currentCount === 1) {
+        await redis.expire(key, windowSeconds);
+    }
+
+    if (currentCount > limit) {
+        const ttl = await redis.ttl(key);
+
+        return {
+            allowed: false,
+            remaining: 0,
+            retryAfter: ttl,
+        };
+    }
+
+    return {
+        allowed: true,
+        remaining: limit - currentCount,
+        retryAfter: 0,
+    };
+};
 
 
 type AuthRes = Promise<{ success: boolean, message: string, data?: string }>;
@@ -49,9 +78,9 @@ export const registerUser = async (data: RegisterInput): AuthRes => {
             email,
             password,
         });
-        
+
         const [otp, otpHash] = generateOTPAndHashedOTP();
-        
+
         await createVerificationCode({
             userId: user.id,
             codeHash: otpHash,
@@ -97,7 +126,7 @@ export const loginUser = async (data: LoginInput): AuthRes => {
         const { identifier, password, remember } = result.data;
 
         const existingUser = await findExistingUser(identifier, identifier);
-        
+
         if (!existingUser) {
             return {
                 success: false,
@@ -155,8 +184,22 @@ export const verifyEmail = async (id: string, otp: string): AuthRes => {
             };
         }
 
+        // Rate limiting 
+        const rateLimitResult = await rateLimit(
+            `otp:email-verification:${user.id}`,
+            5,
+            10 * 60
+        );
+
+        if (!rateLimitResult.allowed) {
+            return {
+                success: false,
+                message: "Too many attempts. Please try again later.",
+            };
+        }
+
         const submittedHash = getHashedOTP(otp);
-        
+
         const verificationCode = await getVerificationCode({
             userId: user.id,
             codeHash: submittedHash,
@@ -213,11 +256,23 @@ export const resendEmailVerificationCode = async (id: string): AuthRes => {
             };
         }
 
+        const rateLimitResult = await rateLimit(
+            `otp:email-resend:${user.id}`,
+            3,
+            10 * 60
+        ); 
 
-        await deleteVerificationCodes(user.id , "EMAIL_VERIFICATION");
-        
+        if (!rateLimitResult.allowed) {
+            return {
+                success: false,
+                message: "Too many resend attempts. Please try again later.",
+            };
+        }
+
+        await deleteVerificationCodes(user.id, "EMAIL_VERIFICATION");
+
         const [otp, otpHash] = generateOTPAndHashedOTP();
-        
+
         await createVerificationCode({
             userId: user.id,
             codeHash: otpHash,
