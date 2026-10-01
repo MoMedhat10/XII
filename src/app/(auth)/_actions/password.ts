@@ -27,16 +27,21 @@ export const forgotPassword = async (data: ForgotPasswordInput): AuthRes => {
 
         const { email } = result.data;
 
-        const rateLimitResult = await rateLimit({
-            key: `password-reset:request:${email}`,
-            limit: 3,
-            windowSeconds: 15 * 60,
-        })
-        if (!rateLimitResult.allowed) {
-            return {
-                success: false,
-                message: "Too many attempts. Please try again later.",
+        try {
+            const rateLimitResult = await rateLimit({
+                key: `password-reset:request:${email}`,
+                limit: 3,
+                windowSeconds: 15 * 60,
+            })
+            if (!rateLimitResult.allowed) {
+                return {
+                    success: false,
+                    message: "Too many attempts. Please try again later.",
+                }
             }
+        } catch (error) {
+            console.error("rate limit error => ", error);
+            throw new Error("Service unavailable , please try again later!");
         }
 
         const user = await findUserByEmail(email);
@@ -123,17 +128,22 @@ export const verifyForgotPasswordOTP = async (otp: string): AuthRes => {
             };
         }
 
-        const rateLimitResult = await rateLimit({
-            key: `otp:password-reset:${session.userId}`,
-            limit: 5,
-            windowSeconds: 10 * 60,
-        });
+        try {
+            const rateLimitResult = await rateLimit({
+                key: `otp:password-reset:${session.userId}`,
+                limit: 5,
+                windowSeconds: 10 * 60,
+            });
 
-        if (!rateLimitResult.allowed) {
-            return {
-                success: false,
-                message: "Too many attempts. Please try again later.",
-            };
+            if (!rateLimitResult.allowed) {
+                return {
+                    success: false,
+                    message: "Too many attempts. Please try again later.",
+                };
+            }
+        } catch (error) {
+            console.error("rate limit error => ", error);
+            throw new Error("Service unavailable , please try again later!");
         }
 
         const submittedHash = getHashedOTP(otp);
@@ -222,17 +232,22 @@ export const resendForgotPasswordOTP = async (): AuthRes => {
             };
         }
 
-        const rateLimitResult = await rateLimit({
-            key: `otp:password-reset-resend:${session.userId}`,
-            limit: 3,
-            windowSeconds: 10 * 60,
-        });
+        try {
+            const rateLimitResult = await rateLimit({
+                key: `otp:password-reset-resend:${session.userId}`,
+                limit: 3,
+                windowSeconds: 10 * 60,
+            });
 
-        if (!rateLimitResult.allowed) {
-            return {
-                success: false,
-                message: "Too many attempts. Please try again later.",
-            };
+            if (!rateLimitResult.allowed) {
+                return {
+                    success: false,
+                    message: "Too many attempts. Please try again later.",
+                };
+            }
+        } catch (error) {
+            console.error("rate limit error => ", error);
+            throw new Error("Service unavailable , please try again later!");
         }
 
         await deleteVerificationCodes(session.userId, "PASSWORD_RESET");
