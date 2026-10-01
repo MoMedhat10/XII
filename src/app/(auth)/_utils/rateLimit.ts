@@ -1,15 +1,15 @@
 import { getRedis } from "../../../../lib/redis";
 
 type RateLimitOptions = {
-  key: string;
-  limit: number;
-  windowSeconds: number;
+    key: string;
+    limit: number;
+    windowSeconds: number;
 };
 
 type RateLimitResult = {
-  allowed: boolean;
-  remaining: number;
-  retryAfter: number;
+    allowed: boolean;
+    remaining: number;
+    retryAfter: number;
 };
 
 const RATE_LIMIT_SCRIPT = `
@@ -33,27 +33,46 @@ const RATE_LIMIT_SCRIPT = `
   return { allowed, remaining, ttl }
 `;
 
+export class ServiceUnavailableError extends Error {
+    constructor(message = "Service unavailable. Please try again later.") {
+        super(message);
+        this.name = "ServiceUnavailableError";
+    }
+}
+
 export const rateLimit = async ({
-  key,
-  limit,
-  windowSeconds,
+    key,
+    limit,
+    windowSeconds,
 }: RateLimitOptions): Promise<RateLimitResult> => {
-  const redis = await getRedis();
+    const redis = await getRedis();
 
-  const result = await redis.eval(RATE_LIMIT_SCRIPT, {
-    keys: [key],
-    arguments: [
-      windowSeconds.toString(),
-      limit.toString(),
-    ],
-  });
+    const result = await redis.eval(RATE_LIMIT_SCRIPT, {
+        keys: [key],
+        arguments: [
+            windowSeconds.toString(),
+            limit.toString(),
+        ],
+    });
 
-  const [allowed, remaining, retryAfter] =
-    result as [number, number, number];
+    const [allowed, remaining, retryAfter] =
+        result as [number, number, number];
 
-  return {
-    allowed: allowed === 1,
-    remaining,
-    retryAfter,
-  };
+    return {
+        allowed: allowed === 1,
+        remaining,
+        retryAfter,
+    };
+};
+
+
+export const rateLimitOrThrow = async (
+    options: RateLimitOptions
+) => {
+    try {
+        return await rateLimit(options);
+    } catch (error) {
+        console.error("Rate limiter error:", error);
+        throw new ServiceUnavailableError();
+    }
 };

@@ -9,7 +9,7 @@ import { verifyEmailTemplate } from "../_utils/templates"
 import { generateOTPAndHashedOTP, getHashedOTP } from "../_utils/OTP"
 import { createUser, findExistingUser, findUserById } from "../_utils/user"
 import { createVerificationCode, deleteVerificationCodeById, deleteVerificationCodes, getVerificationCode, verifyUserEmail } from "../_utils/verificationCode"
-import { rateLimit } from "../_utils/rateLimit"
+import { rateLimit, rateLimitOrThrow, ServiceUnavailableError } from "../_utils/rateLimit"
 
 
 
@@ -96,10 +96,13 @@ export const loginUser = async (data: LoginInput): AuthRes => {
         }
 
         const { identifier, password, remember } = result.data;
+        const normalizedIdentifier = identifier.includes("@")
+            ? identifier.trim().toLowerCase()
+            : identifier.trim();
 
         try {
             const rateLimitResult = await rateLimit({
-                key: `login:user:${identifier}`,
+                key: `login:user:${normalizedIdentifier}`,
                 limit: 5,
                 windowSeconds: 15 * 60
             });
@@ -113,7 +116,7 @@ export const loginUser = async (data: LoginInput): AuthRes => {
             console.error("error => ", error);
         }
 
-        const existingUser = await findExistingUser(identifier, identifier);
+        const existingUser = await findExistingUser(normalizedIdentifier, normalizedIdentifier);
 
         if (!existingUser) {
             return {
@@ -172,24 +175,21 @@ export const verifyEmail = async (id: string, otp: string): AuthRes => {
             };
         }
 
-        try {
-            // Rate limiting 
-            const rateLimitResult = await rateLimit({
-                key: `otp:email-verification:${user.id}`,
-                limit: 5,
-                windowSeconds: 10 * 60
-            });
 
-            if (!rateLimitResult.allowed) {
-                return {
-                    success: false,
-                    message: "Too many attempts. Please try again later.",
-                };
-            }
-        } catch (error) {
-            console.error("rate limit error => ", error);
-            throw new Error("Service unavailable , please try again later!");
+        // Rate limiting 
+        const rateLimitResult = await rateLimitOrThrow({
+            key: `otp:email-verification:${user.id}`,
+            limit: 5,
+            windowSeconds: 10 * 60
+        });
+
+        if (!rateLimitResult.allowed) {
+            return {
+                success: false,
+                message: "Too many attempts. Please try again later.",
+            };
         }
+
 
         const submittedHash = getHashedOTP(otp);
 
@@ -223,6 +223,12 @@ export const verifyEmail = async (id: string, otp: string): AuthRes => {
         };
     } catch (error) {
         console.error("error => ", error);
+        if (error instanceof ServiceUnavailableError) {
+            return {
+                success: false,
+                message: error.message,
+            };
+        }
 
         return {
             success: false,
@@ -249,24 +255,21 @@ export const resendEmailVerificationCode = async (id: string): AuthRes => {
             };
         }
 
-        try {
-            // Rate limiting 
-            const rateLimitResult = await rateLimit({
-                key: `otp:email-resend:${user.id}`,
-                limit: 3,
-                windowSeconds: 10 * 60
-            });
 
-            if (!rateLimitResult.allowed) {
-                return {
-                    success: false,
-                    message: "Too many resend attempts. Please try again later.",
-                };
-            }
-        } catch (error) {
-            console.error("rate limit error => ", error);
-            throw new Error("Service unavailable , please try again later!");
+        // Rate limiting 
+        const rateLimitResult = await rateLimitOrThrow({
+            key: `otp:email-resend:${user.id}`,
+            limit: 3,
+            windowSeconds: 10 * 60
+        });
+
+        if (!rateLimitResult.allowed) {
+            return {
+                success: false,
+                message: "Too many resend attempts. Please try again later.",
+            };
         }
+
 
         await deleteVerificationCodes(user.id, "EMAIL_VERIFICATION");
 
@@ -294,6 +297,12 @@ export const resendEmailVerificationCode = async (id: string): AuthRes => {
 
     } catch (error) {
         console.log("error => ", error);
+        if (error instanceof ServiceUnavailableError) {
+            return {
+                success: false,
+                message: error.message,
+            };
+        }
         return {
             success: false,
             message: "Something went wrong!",
