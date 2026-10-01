@@ -8,6 +8,7 @@ import { generateOTPAndHashedOTP, getHashedOTP } from "../_utils/OTP"
 import { findUserByEmail } from "../_utils/user"
 import { createVerificationCode, deleteVerificationCodeById, deleteVerificationCodes, getVerificationCode } from "../_utils/verificationCode"
 import { createResetPasswordSession, deletePasswordSessionById, findPasswordSessionById, updateUserPassword, verifyResetPasswordSession } from "../_utils/passwordResetSession"
+import { rateLimit } from "../_utils/rateLimit"
 
 
 type AuthRes = Promise<{ success: boolean, message: string, data?: string }>;
@@ -35,11 +36,11 @@ export const forgotPassword = async (data: ForgotPasswordInput): AuthRes => {
             }
         }
 
-        await deleteVerificationCodes(user.id , "PASSWORD_RESET");
+        await deleteVerificationCodes(user.id, "PASSWORD_RESET");
 
         const [otp, otpHash] = generateOTPAndHashedOTP();
 
-        await createVerificationCode({ userId: user.id , codeHash: otpHash , type: "PASSWORD_RESET"});
+        await createVerificationCode({ userId: user.id, codeHash: otpHash, type: "PASSWORD_RESET" });
 
         const emailResult = await sendOTPEmail({ email, code: otp, template: resetPasswordTemplate });
         if (!emailResult.success) {
@@ -65,7 +66,7 @@ export const forgotPassword = async (data: ForgotPasswordInput): AuthRes => {
     }
 }
 
-export const verifyForgotPasswordOTP = async ( otp: string ): AuthRes => {
+export const verifyForgotPasswordOTP = async (otp: string): AuthRes => {
     try {
         const cookieStore = await cookies();
 
@@ -107,9 +108,22 @@ export const verifyForgotPasswordOTP = async ( otp: string ): AuthRes => {
                 message: "Code already verified",
             };
         }
-        
+
+        const rateLimitResult = await rateLimit({
+            key: `otp:password-reset:${session.userId}`,
+            limit: 5,
+            windowSeconds: 10 * 60,
+        });
+
+        if (!rateLimitResult.allowed) {
+            return {
+                success: false,
+                message: "Too many attempts. Please try again later.",
+            };
+        }
+
         const submittedHash = getHashedOTP(otp);
-        
+
         const verificationCode = await getVerificationCode({
             userId: session.userId,
             codeHash: submittedHash,
@@ -133,7 +147,7 @@ export const verifyForgotPasswordOTP = async ( otp: string ): AuthRes => {
             }
         }
 
-        await verifyResetPasswordSession(sessionId , session.userId);
+        await verifyResetPasswordSession(sessionId, session.userId);
 
         return {
             success: true,
@@ -194,8 +208,21 @@ export const resendForgotPasswordOTP = async (): AuthRes => {
             };
         }
 
-        await deleteVerificationCodes(session.userId , "PASSWORD_RESET");
-               
+        const rateLimitResult = await rateLimit({
+            key: `otp:password-reset:${session.userId}`,
+            limit: 3,
+            windowSeconds: 10 * 60,
+        });
+
+        if (!rateLimitResult.allowed) {
+            return {
+                success: false,
+                message: "Too many attempts. Please try again later.",
+            };
+        }
+
+        await deleteVerificationCodes(session.userId, "PASSWORD_RESET");
+
         const [otp, otpHash] = generateOTPAndHashedOTP();
 
         await createVerificationCode({
@@ -297,9 +324,9 @@ export const resetPassword = async (data: ResetPasswordInput): AuthRes => {
             success: true,
             message: "Password reset successfully",
         };
-        
+
     } catch (error) {
-        console.error("resetPassword error:", error); 
+        console.error("resetPassword error:", error);
         return {
             success: false,
             message: "Something went wrong!",

@@ -9,36 +9,8 @@ import { verifyEmailTemplate } from "../_utils/templates"
 import { generateOTPAndHashedOTP, getHashedOTP } from "../_utils/OTP"
 import { createUser, findExistingUser, findUserById } from "../_utils/user"
 import { createVerificationCode, deleteVerificationCodeById, deleteVerificationCodes, getVerificationCode, verifyUserEmail } from "../_utils/verificationCode"
-import redis from "../../../../lib/redis";
+import { rateLimit } from "../_utils/rateLimit"
 
-// simple rate limiting
-const rateLimit = async (
-    key: string,
-    limit: number,
-    windowSeconds: number
-) => {
-    const currentCount = await redis.incr(key);
-
-    if (currentCount === 1) {
-        await redis.expire(key, windowSeconds);
-    }
-
-    if (currentCount > limit) {
-        const ttl = await redis.ttl(key);
-
-        return {
-            allowed: false,
-            remaining: 0,
-            retryAfter: ttl,
-        };
-    }
-
-    return {
-        allowed: true,
-        remaining: limit - currentCount,
-        retryAfter: 0,
-    };
-};
 
 
 type AuthRes = Promise<{ success: boolean, message: string, data?: string }>;
@@ -185,11 +157,11 @@ export const verifyEmail = async (id: string, otp: string): AuthRes => {
         }
 
         // Rate limiting 
-        const rateLimitResult = await rateLimit(
-            `otp:email-verification:${user.id}`,
-            5,
-            10 * 60
-        );
+        const rateLimitResult = await rateLimit({
+            key: `otp:email-verification:${user.id}`,
+            limit: 5,
+            windowSeconds: 10 * 60
+        }); 
 
         if (!rateLimitResult.allowed) {
             return {
@@ -256,11 +228,12 @@ export const resendEmailVerificationCode = async (id: string): AuthRes => {
             };
         }
 
-        const rateLimitResult = await rateLimit(
-            `otp:email-resend:${user.id}`,
-            3,
-            10 * 60
-        ); 
+        // Rate limiting 
+        const rateLimitResult = await rateLimit({
+            key: `otp:email-resend:${user.id}`,
+            limit: 3,
+            windowSeconds: 10 * 60
+        }); 
 
         if (!rateLimitResult.allowed) {
             return {
