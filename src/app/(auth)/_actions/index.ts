@@ -97,6 +97,18 @@ export const loginUser = async (data: LoginInput): AuthRes => {
 
         const { identifier, password, remember } = result.data;
 
+        const rateLimitResult = await rateLimit({
+            key: `login:user:${identifier}`,
+            limit: 5,
+            windowSeconds: 15 * 60
+        });
+        if (!rateLimitResult.allowed) {
+            return {
+                success: false,
+                message: "Too many attempts. Please try again later.",
+            };
+        }
+
         const existingUser = await findExistingUser(identifier, identifier);
 
         if (!existingUser) {
@@ -230,7 +242,7 @@ export const resendEmailVerificationCode = async (id: string): AuthRes => {
 
         // Rate limiting 
         const rateLimitResult = await rateLimit({
-            key: `otp:email-resend:${user.id}`,
+            key: `otp:email-resend:${user.id}`, 
             limit: 3,
             windowSeconds: 10 * 60
         }); 

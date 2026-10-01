@@ -27,6 +27,18 @@ export const forgotPassword = async (data: ForgotPasswordInput): AuthRes => {
 
         const { email } = result.data;
 
+        const rateLimitResult = await rateLimit({
+            key: `password-reset:request:${email}`,
+            limit: 3,
+            windowSeconds: 15 * 60,
+        })
+        if (!rateLimitResult.allowed) {
+            return {
+                success: false,
+                message: "Too many attempts. Please try again later.",
+            }
+        }
+
         const user = await findUserByEmail(email);
 
         if (!user) {
@@ -35,6 +47,8 @@ export const forgotPassword = async (data: ForgotPasswordInput): AuthRes => {
                 message: "Invalid email"
             }
         }
+
+
 
         await deleteVerificationCodes(user.id, "PASSWORD_RESET");
 
@@ -209,7 +223,7 @@ export const resendForgotPasswordOTP = async (): AuthRes => {
         }
 
         const rateLimitResult = await rateLimit({
-            key: `otp:password-reset:${session.userId}`,
+            key: `otp:password-reset-resend:${session.userId}`,
             limit: 3,
             windowSeconds: 10 * 60,
         });
