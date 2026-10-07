@@ -12,6 +12,7 @@ type RateLimitResult = {
     retryAfter: number;
 };
 
+// lua script for atomicity!  
 const RATE_LIMIT_SCRIPT = `
   local current = redis.call("INCR", KEYS[1])
 

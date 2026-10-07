@@ -3,7 +3,6 @@ import prisma from "../../lib/prisma"
 
 export default async function Page() {
   const users = await prisma.user.findMany();
-  console.log(users); 
   return (
     <main className="min-h-screen bg-background text-foreground p-6 md:p-16 max-w-[1440px] mx-auto space-y-16">
       {/* Header & Brand Identity */}

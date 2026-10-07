@@ -10,6 +10,7 @@ import { generateOTPAndHashedOTP, getHashedOTP } from "../_utils/OTP"
 import { createUser, findExistingUser, findUserById } from "../_utils/user"
 import { createVerificationCode, deleteVerificationCodeById, deleteVerificationCodes, getVerificationCode, verifyUserEmail } from "../_utils/verificationCode"
 import { rateLimit, rateLimitOrThrow, ServiceUnavailableError } from "../_utils/rateLimit"
+import { logger } from "../../../../lib/pino"
 
 
 
@@ -26,6 +27,22 @@ export const registerUser = async (data: RegisterInput): AuthRes => {
         }
 
         const { username, email, password } = result.data;
+
+        // Rate limiting 
+        const rateLimitResult = await rateLimitOrThrow({
+            key: `register:user:${email}`,
+            limit: 5,
+            windowSeconds: 10 * 60
+        });
+
+        if (!rateLimitResult.allowed) {
+            return {
+                success: false,
+                message: "Too many attempts. Please try again later.",
+            };
+        }
+
+
 
         const existingUser = await findExistingUser(username, email);
 
@@ -68,6 +85,11 @@ export const registerUser = async (data: RegisterInput): AuthRes => {
             }
         }
 
+        logger.info({
+            userId: user.id,
+            email: user.email,
+        }, "User registered successfully");
+
         return {
             success: true,
             message: emailResult.message,
@@ -76,7 +98,7 @@ export const registerUser = async (data: RegisterInput): AuthRes => {
 
 
     } catch (error) {
-        console.log("error => ", error);
+        logger.error(error, "error in registerUser");
         return {
             success: false,
             message: "Something went wrong!",
@@ -113,7 +135,7 @@ export const loginUser = async (data: LoginInput): AuthRes => {
                 };
             }
         } catch (error) {
-            console.error("error => ", error);
+            logger.error(error, "error in redis service!");
         }
 
         const existingUser = await findExistingUser(normalizedIdentifier, normalizedIdentifier);
@@ -142,13 +164,18 @@ export const loginUser = async (data: LoginInput): AuthRes => {
 
         await createSession(existingUser.id, remember);
 
+        logger.info({
+            userId: existingUser.id,
+            email: existingUser.email,
+        }, "User logged in successfully");
+
         return {
             success: true,
             message: `welcome back ${existingUser.username}!`,
         }
 
     } catch (error) {
-        console.log(error);
+        logger.error(error, "error in loginUser");
         return {
             success: false,
             message: "Something went wrong!",
@@ -217,12 +244,17 @@ export const verifyEmail = async (id: string, otp: string): AuthRes => {
 
         await verifyUserEmail(user.id, verificationCode.id);
 
+        logger.info({
+            userId: user.id,
+            email: user.email,
+        }, "Email verified successfully");
+
         return {
             success: true,
             message: "Email verified successfully",
         };
     } catch (error) {
-        console.error("error => ", error);
+        logger.error(error, "error in verifyEmail");
         if (error instanceof ServiceUnavailableError) {
             return {
                 success: false,
@@ -290,13 +322,18 @@ export const resendEmailVerificationCode = async (id: string): AuthRes => {
             }
         }
 
+        logger.info({
+            userId: user.id,
+            email: user.email,
+        }, "code resent successfully");
+
         return {
             success: true,
             message: "code resent successfully"
         }
 
     } catch (error) {
-        console.log("error => ", error);
+        logger.error(error, "error in resendEmailVerificationCode");
         if (error instanceof ServiceUnavailableError) {
             return {
                 success: false,
@@ -326,13 +363,17 @@ export const logout = async (): AuthRes => {
         await deleteSession(sessionId);
         cookieStore.delete("xii_session");
 
+        logger.info({
+            sessionId,
+        }, "User logged out successfully");
+
         return {
             success: true,
             message: "Logged out successfully",
         }
 
     } catch (error) {
-        console.log("error => ", error);
+        logger.error(error, "error in logout");
         return {
             success: false,
             message: "Something went wrong",

@@ -9,6 +9,7 @@ import { findUserByEmail } from "../_utils/user"
 import { createVerificationCode, deleteVerificationCodeById, deleteVerificationCodes, getVerificationCode } from "../_utils/verificationCode"
 import { createResetPasswordSession, deletePasswordSessionById, findPasswordSessionById, updateUserPassword, verifyResetPasswordSession } from "../_utils/passwordResetSession"
 import { rateLimitOrThrow, ServiceUnavailableError } from "../_utils/rateLimit"
+import { logger } from "../../../../lib/pino"
 
 
 type AuthRes = Promise<{ success: boolean, message: string, data?: string }>;
@@ -63,13 +64,18 @@ export const forgotPassword = async (data: ForgotPasswordInput): AuthRes => {
 
         await createResetPasswordSession(user.id);
 
+        logger.info({
+            userId: user.id,
+            email: user.email,
+        }, "Password reset code sent successfully");
+
         return {
             success: true,
             message: emailResult.message,
         }
 
     } catch (error) {
-        console.log("error => ", error);
+        logger.error(error, "error in forgotPassword");
 
         if (error instanceof ServiceUnavailableError) {
             return {
@@ -169,12 +175,17 @@ export const verifyForgotPasswordOTP = async (otp: string): AuthRes => {
 
         await verifyResetPasswordSession(sessionId, session.userId);
 
+        logger.info({
+            userId: session.userId,
+            email: session.user.email,
+        }, "Password reset code verified successfully");
+
         return {
             success: true,
             message: "Code verified successfully",
         };
     } catch (error) {
-        console.error("verifyForgotPasswordOTP error:", error);
+        logger.error(error, "error in verifyForgotPasswordOTP");
         if (error instanceof ServiceUnavailableError) {
             return {
                 success: false,
@@ -272,12 +283,17 @@ export const resendForgotPasswordOTP = async (): AuthRes => {
             };
         }
 
+        logger.info({
+            userId: session.userId,
+            email: session.user.email,
+        }, "Password reset code resent successfully");
+
         return {
             success: true,
             message: "A new verification code has been sent.",
         };
     } catch (error) {
-        console.error("resendForgotPasswordOTP error:", error);
+        logger.error(error, "error in resendForgotPasswordOTP");
         if (error instanceof ServiceUnavailableError) {
             return {
                 success: false,
@@ -354,13 +370,18 @@ export const resetPassword = async (data: ResetPasswordInput): AuthRes => {
         });
         cookieStore.delete("reset_password_session");
 
+        logger.info({
+            userId: session.userId,
+            email: session.user.email,
+        }, "Password reset successfully");
+
         return {
             success: true,
             message: "Password reset successfully",
         };
 
     } catch (error) {
-        console.error("resetPassword error:", error);
+        logger.error(error, "error in resetPassword");
         return {
             success: false,
             message: "Something went wrong!",

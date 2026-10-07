@@ -2,7 +2,7 @@ import crypto from "crypto"
 
 
 
-export const generateOTPAndHashedOTP = () => {
+export const generateOTPAndHashedOTP = (): [string , string] => {
     const otp = crypto.randomInt(100000, 1000000).toString();
  
     const otpHash = crypto
