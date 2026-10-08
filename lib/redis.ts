@@ -30,7 +30,7 @@ redis.on("reconnecting", () => {
 });
 
 redis.on("disconnect", () => {
-  logger.info("Redis disconnected");
+  logger.error("Redis disconnected");
 });
 
 redis.on("end", () => {
