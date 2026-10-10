@@ -53,6 +53,36 @@
     --radius-2xl: 0px;
     --radius-3xl: 0px;
     --radius-4xl: 0px;
+    --ease-xii: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+@keyframes xii-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes xii-pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes xii-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+}
+
+@keyframes xii-marquee {
+  to {
+    transform: translateX(-50%);
+  }
 }
 
 :root {
@@ -145,6 +175,10 @@
     @apply border-border outline-ring/50;
     border-radius: 0 !important;
   }
+  /* Opt-in escape hatch for true circles (watch cases, blueprint rings). */
+  .circle {
+    border-radius: 9999px !important;
+  }
   body {
     @apply bg-background text-foreground font-sans;
   }
@@ -156,6 +190,13 @@
   }
   html {
     @apply font-sans;
+    /* keep in-page anchors clear of the sticky 84px navbar */
+    scroll-padding-top: 88px;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
   }
 }
 

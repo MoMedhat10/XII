@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import prisma from "../../../../lib/prisma";
 import { cookies } from "next/headers";
+import { unstable_rethrow } from "next/navigation";
 
 const SEVEN_DAYS_IN_MS = 7 * 24 * 60 * 60 * 1000;
 const THIRTY_DAYS_IN_MS = 30 * 24 * 60 * 60 * 1000;
@@ -69,6 +70,8 @@ export const getCurrentUser = async () => {
         return session.user;
 
     } catch (error) {
+        // let Next.js's own request-time signals (e.g. cookies() opting the route into dynamic rendering) through
+        unstable_rethrow(error);
         console.log("error => ", error);
         return null;
     }

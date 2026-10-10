@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import { Metadata } from "next"
 import { VerifyEmailForm } from "@/components/auth/verify-email-form"
 
@@ -14,5 +15,9 @@ export const metadata: Metadata = {
 }
 
 export default function VerifyEmailPage() {
-  return <VerifyEmailForm />
+  return (
+    <Suspense fallback={null}>
+      <VerifyEmailForm />
+    </Suspense>
+  )
 }

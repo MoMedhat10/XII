@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { Space_Grotesk, IBM_Plex_Sans, Geist_Mono } from "next/font/google"
 
 import "./globals.css"
@@ -22,6 +23,11 @@ const fontMono = Geist_Mono({
   variable: "--font-mono",
 })
 
+export const metadata: Metadata = {
+  title: "XII",
+  description: "XII — The Luxury Timepiece Archive.",
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -31,8 +37,9 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
+      data-scroll-behavior="smooth"
       className={cn(
-        "antialiased font-sans",
+        "font-sans antialiased",
         spaceGrotesk.variable,
         ibmPlexSans.variable,
         fontMono.variable
@@ -45,4 +52,3 @@ export default function RootLayout({
     </html>
   )
 }
-
