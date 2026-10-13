@@ -3,16 +3,10 @@ import Link from "next/link"
 import { getCurrentUser } from "@/app/(auth)/_utils/session"
 import { cn } from "@/lib/utils"
 
+import { LogoutButton } from "./logout-button"
+import { NavLinks } from "./nav-links"
 import { ScrollLink } from "./scroll-link"
-import { gutter, labelCaps } from "./styles"
-
-const links = [
-  { label: "Exhibition", href: "/#drop", active: true },
-  { label: "Catalog", href: "/#drop" },
-  { label: "Finder", href: "/#advisor" },
-  { label: "About", href: "/#craft" },
-  { label: "Journal", href: "/#footer" },
-]
+import { gutter } from "./styles"
 
 const actionBase =
   "inline-flex h-10 items-center justify-center border-4 border-foreground transition-colors"
@@ -72,23 +66,7 @@ export async function Nav() {
           XII
         </ScrollLink>
 
-        <div className="hidden gap-[clamp(16px,2.6vw,40px)] md:flex">
-          {links.map((link) => (
-            <ScrollLink
-              key={link.label}
-              href={link.href}
-              className={cn(
-                labelCaps,
-                "border-b-4 py-1.5 transition-colors",
-                link.active
-                  ? "border-gold"
-                  : "border-transparent hover:border-foreground"
-              )}
-            >
-              {link.label}
-            </ScrollLink>
-          ))}
-        </div>
+        <NavLinks />
 
         <div className="flex gap-3">
           {user ? (
@@ -113,6 +91,12 @@ export async function Nav() {
               >
                 <BagIcon />
               </Link>
+              <LogoutButton
+                className={cn(
+                  actionBase,
+                  "bg-background px-4 font-sans text-xs font-bold tracking-[1.5px] uppercase hover:bg-foreground hover:text-black"
+                )}
+              />
             </>
           ) : (
             <>
