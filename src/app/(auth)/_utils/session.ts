@@ -8,7 +8,6 @@ import type { Prisma } from "@/app/generated/prisma/client";
 const SEVEN_DAYS_IN_MS = 7 * 24 * 60 * 60 * 1000;
 const THIRTY_DAYS_IN_MS = 30 * 24 * 60 * 60 * 1000;
 
-// Fields of a user that are safe to hand to Server and Client Components
 export const publicUserSelect = {
     id: true,
     username: true,
