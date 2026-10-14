@@ -100,7 +100,8 @@ model Watch {
   name        String
   description String
   model       String
-  price       Decimal
+  /// USD minor units (cents), e.g. 1250000 = $12,500.00
+  priceCents  Int
   stock       Int
   brandId     String
   isActive    Boolean  @default(true)
@@ -166,7 +167,8 @@ model Order {
   id        String      @id @default(uuid())
   userId    String
   status    OrderStatus @default(PAID)
-  total     Decimal
+  /// USD minor units (cents)
+  totalCents Int
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
 
@@ -179,7 +181,8 @@ model OrderItem {
   orderId   String
   watchId   String
   quantity  Int
-  unitPrice Decimal
+  /// USD minor units (cents), snapshot at purchase time
+  unitPriceCents Int
   createdAt DateTime @default(now())
 
   order Order @relation(fields: [orderId], references: [id])

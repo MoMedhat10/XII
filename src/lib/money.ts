@@ -1,0 +1,4 @@
+const usd = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" })
+
+export const formatCents = (cents: number) => usd.format(cents / 100)
+export const dollarsToCents = (dollars: number) => Math.round(dollars * 100)
