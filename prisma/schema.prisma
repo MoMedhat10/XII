@@ -128,7 +128,7 @@ model WatchImage {
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
 
-  watch Watch @relation(fields: [watchId], references: [id])
+  watch Watch @relation(fields: [watchId], references: [id], onDelete: Cascade)
 
   @@unique([watchId, sortOrder])
 }
@@ -139,8 +139,8 @@ model FavoriteWatch {
   watchId   String
   createdAt DateTime @default(now())
 
-  user  User  @relation(fields: [userId], references: [id])
-  watch Watch @relation(fields: [watchId], references: [id])
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  watch Watch @relation(fields: [watchId], references: [id], onDelete: Cascade)
 
   @@unique([userId, watchId])
   @@index([watchId])
@@ -152,7 +152,7 @@ model Cart {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user      User       @relation(fields: [userId], references: [id])
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   cartItems CartItem[]
 }
 
@@ -164,23 +164,25 @@ model CartItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  cart  Cart  @relation(fields: [cartId], references: [id])
-  watch Watch @relation(fields: [watchId], references: [id])
+  cart  Cart  @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  watch Watch @relation(fields: [watchId], references: [id], onDelete: Cascade)
 
   @@unique([cartId, watchId])
   @@index([watchId])
 }
 
 model Order {
-  id         String      @id @default(uuid())
-  userId     String
-  status     OrderStatus @default(PAID)
+  id            String      @id @default(uuid())
+  userId        String?
+  /// Snapshot of the customer's email at purchase time
+  customerEmail String      @db.Citext
+  status        OrderStatus @default(PAID)
   /// USD minor units (cents)
-  totalCents Int
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+  totalCents    Int
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 
-  user       User        @relation(fields: [userId], references: [id])
+  user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
   orderItems OrderItem[]
 
   @@index([userId, createdAt])
@@ -195,7 +197,7 @@ model OrderItem {
   unitPriceCents Int
   createdAt      DateTime @default(now())
 
-  order Order @relation(fields: [orderId], references: [id])
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
   watch Watch @relation(fields: [watchId], references: [id])
 
   @@index([orderId])
