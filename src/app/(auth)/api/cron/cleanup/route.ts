@@ -32,7 +32,7 @@ export async function GET(request: Request) {
     }
 
     try {
-        const result = await prisma.verificationCode.deleteMany({
+        const verificationCodeResult = await prisma.verificationCode.deleteMany({
             where: {
                 expiresAt: {
                     lt: new Date(),
@@ -40,12 +40,21 @@ export async function GET(request: Request) {
             },
         });
 
-        logger.info({ deleted: result.count }, "Verification code cleanup completed.");
+        const sessionResult = await prisma.session.deleteMany({
+            where: {
+                expiresAt: {
+                    lt: new Date(),
+                },
+            },
+        });
+
+
+        logger.info({ deletedVerificationCode: verificationCodeResult.count, deletedSession: sessionResult.count }, "Verification code cleanup completed.");
 
         return NextResponse.json({
             success: true,
             message: "Cron executed successfully",
-            deleted: result.count,
+            deleted: verificationCodeResult.count + sessionResult.count,
         });
     } catch (error) {
         logger.error(error, "Verification code cleanup failed");

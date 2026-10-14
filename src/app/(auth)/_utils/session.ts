@@ -1,9 +1,10 @@
 import crypto from "crypto";
 import prisma from "../../../../lib/prisma";
 import { cookies } from "next/headers";
-import { unstable_rethrow } from "next/navigation";
+
 import { cache } from "react";
 import type { Prisma } from "@/app/generated/prisma/client";
+import { logger } from "../../../../lib/pino";
 
 const SEVEN_DAYS_IN_MS = 7 * 24 * 60 * 60 * 1000;
 const THIRTY_DAYS_IN_MS = 30 * 24 * 60 * 60 * 1000;
@@ -45,13 +46,11 @@ export const createSession = async (userId: string, rememberMe: boolean) => {
 
 
 export const getCurrentUser = cache(async (): Promise<PublicUser | null> => {
-    try {
-        const cookieStore = await cookies();
-        const sessionId = cookieStore.get("xii_session")?.value;
+    const cookieStore = await cookies();
+    const sessionId = cookieStore.get("xii_session")?.value;
+    if (!sessionId) return null;
 
-        if (!sessionId) {
-            return null;
-        }
+    try {
         const session = await prisma.session.findUnique({
             where: {
                 id: sessionId,
@@ -62,28 +61,14 @@ export const getCurrentUser = cache(async (): Promise<PublicUser | null> => {
         });
 
 
-        if (!session) {
-            return null;
-        }
-
-
-        if (new Date() >= session.expiresAt) {
-            await prisma.session.delete({
-                where: {
-                    id: session.id,
-                }
-            })
-
-            cookieStore.delete("xii_session");
+        if (!session || new Date() >= session.expiresAt) {
             return null;
         }
 
         return session.user;
 
-    } catch (error) { 
-        // let Next.js's own request-time signals (e.g. cookies() opting the route into dynamic rendering) through
-        unstable_rethrow(error);
-        console.log("error => ", error);
+    } catch (error) {
+        logger.error(error, "Error fetching current user");
         return null;
     }
 })
@@ -91,8 +76,8 @@ export const getCurrentUser = cache(async (): Promise<PublicUser | null> => {
 
 export const deleteSession = async (sessionId: string) => {
     return await prisma.session.deleteMany({
-            where: {
-                id: sessionId,
-            }
-        })
+        where: {
+            id: sessionId,
+        }
+    })
 }
