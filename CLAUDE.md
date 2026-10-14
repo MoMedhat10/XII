@@ -37,6 +37,10 @@ Environment variables (`.env`, loaded by `prisma.config.ts` via `dotenv/config`)
 
 The `@/*` alias maps to `src/*`, so these files are imported by relative path (e.g. `../../../../lib/prisma`). `src/lib/utils.ts` (`cn`) is the shadcn utility.
 
+`lib/prisma.ts` imports `server-only`, so importing it from a client component fails the build. Server Components and actions must never pass raw Prisma rows to Client Components: map them to plain DTOs (see `src/data/watches.ts`) and use `publicUserSelect` / `PublicUser` from `_utils/session.ts` for user data, which keeps `passwordHash` out of `getCurrentUser()`.
+
+**Data conventions:** money is stored as integer USD cents (`priceCents`, `totalCents`, `unitPriceCents`; format with `formatCents` in `src/lib/money.ts`). `User.email` and `User.username` are `citext` columns, so uniqueness is case-insensitive, and emails are trimmed and lowercased by the zod schemas. Orders outlive their user (`Order.userId` is `SetNull`, with `customerEmail` as a snapshot).
+
 The Prisma client is generated to `src/app/generated/prisma`, which is gitignored. Import types from `@/app/generated/prisma/client` and never edit the generated files. `PRISMA_WORKFLOW.md` has the full Prisma workflow.
 
 ### Auth (`src/app/(auth)/`)
