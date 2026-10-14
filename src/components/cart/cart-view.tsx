@@ -9,8 +9,7 @@ import { cn } from "@/lib/utils"
 
 import { button, eyebrow, gutter, monoCaption } from "../home/styles"
 import { CartEmpty } from "./cart-empty"
-import { CartUndoBar } from "./cart-undo-bar"
-import { usd, type CartItem, type CartUndo } from "./cart-types"
+import { usd, type CartItem } from "./cart-types"
 
 const textAction =
   "cursor-pointer border-b-2 border-surface-variant pb-0.5 font-sans text-xs font-bold tracking-[1.5px] uppercase transition-colors hover:border-gold hover:text-gold"
@@ -27,7 +26,6 @@ export function CartView({
 }) {
   // Local-only simulation: nothing is persisted.
   const [items, setItems] = useState(initialItems)
-  const [undo, setUndo] = useState<CartUndo | null>(null)
   const [promo, setPromo] = useState("")
 
   const pieces = items.reduce((sum, i) => sum + i.qty, 0)
@@ -43,23 +41,14 @@ export function CartView({
     )
 
   const drop = (item: CartItem, saved: boolean) => {
-    setUndo({ item, index: items.indexOf(item), saved })
     setItems((list) => list.filter((i) => i.id !== item.id))
-  }
-
-  const restore = () => {
-    if (!undo) return
-    setItems((list) => {
-      const next = [...list]
-      next.splice(undo.index, 0, undo.item)
-      return next
-    })
-    setUndo(null)
+    toast.success(
+      saved ? `${item.name} moved to your wishlist` : `${item.name} removed`
+    )
   }
 
   const addPick = (pick: CartItem) => {
     setItems([pick])
-    setUndo(null)
     toast.success("Added to your bag")
   }
 
@@ -69,9 +58,7 @@ export function CartView({
   }
 
   if (!items.length) {
-    return (
-      <CartEmpty picks={picks} undo={undo} onUndo={restore} onAdd={addPick} />
-    )
+    return <CartEmpty picks={picks} onAdd={addPick} />
   }
 
   return (
@@ -179,10 +166,6 @@ export function CartView({
               </div>
             </div>
           ))}
-
-          {undo && (
-            <CartUndoBar undo={undo} onUndo={restore} className="mt-6" />
-          )}
         </div>
 
         <aside className="w-full border-4 bg-[#141515] lg:sticky lg:top-8 lg:mt-7 lg:w-[380px] xl:w-[440px]">

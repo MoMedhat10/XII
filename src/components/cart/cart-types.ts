@@ -10,6 +10,4 @@ export type CartItem = {
   flag?: string
 }
 
-export type CartUndo = { item: CartItem; index: number; saved: boolean }
-
 export const usd = (n: number) => "$" + n.toLocaleString("en-US")

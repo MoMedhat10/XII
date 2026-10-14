@@ -4,18 +4,13 @@ import { ImageFallback } from "@/components/image-fallback"
 import { cn } from "@/lib/utils"
 
 import { button, eyebrow, gridBackdrop, monoCaption } from "../home/styles"
-import { usd, type CartItem, type CartUndo } from "./cart-types"
-import { CartUndoBar } from "./cart-undo-bar"
+import { usd, type CartItem } from "./cart-types"
 
 export function CartEmpty({
   picks,
-  undo,
-  onUndo,
   onAdd,
 }: {
   picks: CartItem[]
-  undo: CartUndo | null
-  onUndo: () => void
   onAdd: (pick: CartItem) => void
 }) {
   return (
@@ -36,7 +31,6 @@ export function CartEmpty({
       </svg>
 
       <div className="relative flex max-w-[600px] flex-col items-center gap-6 text-center">
-        {undo && <CartUndoBar undo={undo} onUndo={onUndo} className="w-full" />}
         <div className="flex size-[72px] items-center justify-center border-4 bg-background">
           <svg
             width="28"
