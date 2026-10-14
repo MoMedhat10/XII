@@ -2,9 +2,22 @@ import crypto from "crypto";
 import prisma from "../../../../lib/prisma";
 import { cookies } from "next/headers";
 import { unstable_rethrow } from "next/navigation";
+import { cache } from "react";
+import type { Prisma } from "@/app/generated/prisma/client";
 
 const SEVEN_DAYS_IN_MS = 7 * 24 * 60 * 60 * 1000;
 const THIRTY_DAYS_IN_MS = 30 * 24 * 60 * 60 * 1000;
+
+// Fields of a user that are safe to hand to Server and Client Components
+export const publicUserSelect = {
+    id: true,
+    username: true,
+    email: true,
+    role: true,
+    emailVerifiedAt: true,
+} satisfies Prisma.UserSelect;
+
+export type PublicUser = Prisma.UserGetPayload<{ select: typeof publicUserSelect }>;
 
 
 export const createSession = async (userId: string, rememberMe: boolean) => {
@@ -32,7 +45,7 @@ export const createSession = async (userId: string, rememberMe: boolean) => {
 };
 
 
-export const getCurrentUser = async () => {
+export const getCurrentUser = cache(async (): Promise<PublicUser | null> => {
     try {
         const cookieStore = await cookies();
         const sessionId = cookieStore.get("xii_session")?.value;
@@ -40,13 +53,12 @@ export const getCurrentUser = async () => {
         if (!sessionId) {
             return null;
         }
-
         const session = await prisma.session.findUnique({
             where: {
                 id: sessionId,
             },
             include: {
-                user: true,
+                user: { select: publicUserSelect },
             },
         });
 
@@ -66,16 +78,16 @@ export const getCurrentUser = async () => {
             cookieStore.delete("xii_session");
             return null;
         }
- 
+
         return session.user;
 
-    } catch (error) {
+    } catch (error) { 
         // let Next.js's own request-time signals (e.g. cookies() opting the route into dynamic rendering) through
         unstable_rethrow(error);
         console.log("error => ", error);
         return null;
     }
-}
+})
 
 
 export const deleteSession = async (sessionId: string) => {
