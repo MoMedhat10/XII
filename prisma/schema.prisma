@@ -38,13 +38,13 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  emailVerifiedAt   DateTime?
-  cart              Cart?
-  session           Session[]
+  emailVerifiedAt       DateTime?
+  cart                  Cart?
+  session               Session[]
   passwordResetSessions PasswordResetSession[]
-  orders            Order[]
-  favorites         FavoriteWatch[]
-  verificationCodes VerificationCode[]
+  orders                Order[]
+  favorites             FavoriteWatch[]
+  verificationCodes     VerificationCode[]
 }
 
 model Session {
@@ -56,14 +56,15 @@ model Session {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([expiresAt])
 }
 
 model PasswordResetSession {
-  id        String   @id
-  userId    String
-  expiresAt DateTime
-  verifiedAt  DateTime?
-  createdAt DateTime @default(now())
+  id         String    @id
+  userId     String
+  expiresAt  DateTime
+  verifiedAt DateTime?
+  createdAt  DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -81,7 +82,8 @@ model VerificationCode {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
+  @@index([userId, type])
+  @@index([expiresAt])
 }
 
 model Brand {
@@ -113,6 +115,10 @@ model Watch {
   favorites  FavoriteWatch[]
   cartItems  CartItem[]
   orderItems OrderItem[]
+
+  @@index([brandId])
+  @@index([isActive, createdAt])
+  @@index([isActive, priceCents])
 }
 
 model WatchImage {
@@ -137,6 +143,7 @@ model FavoriteWatch {
   watch Watch @relation(fields: [watchId], references: [id])
 
   @@unique([userId, watchId])
+  @@index([watchId])
 }
 
 model Cart {
@@ -161,30 +168,36 @@ model CartItem {
   watch Watch @relation(fields: [watchId], references: [id])
 
   @@unique([cartId, watchId])
+  @@index([watchId])
 }
 
 model Order {
-  id        String      @id @default(uuid())
-  userId    String
-  status    OrderStatus @default(PAID)
+  id         String      @id @default(uuid())
+  userId     String
+  status     OrderStatus @default(PAID)
   /// USD minor units (cents)
   totalCents Int
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
 
   user       User        @relation(fields: [userId], references: [id])
   orderItems OrderItem[]
+
+  @@index([userId, createdAt])
 }
 
 model OrderItem {
-  id        String   @id @default(uuid())
-  orderId   String
-  watchId   String
-  quantity  Int
+  id             String   @id @default(uuid())
+  orderId        String
+  watchId        String
+  quantity       Int
   /// USD minor units (cents), snapshot at purchase time
   unitPriceCents Int
-  createdAt DateTime @default(now())
+  createdAt      DateTime @default(now())
 
   order Order @relation(fields: [orderId], references: [id])
   watch Watch @relation(fields: [watchId], references: [id])
+
+  @@index([orderId])
+  @@index([watchId])
 }
