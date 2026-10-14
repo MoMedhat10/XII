@@ -3,6 +3,7 @@ import { z } from "zod"
 export const loginSchema = z.object({
   identifier: z
     .string()
+    .trim()
     .min(1, "Email or username is required")
     .min(3, "Identifier must be at least 3 characters"),
   password: z
@@ -16,6 +17,8 @@ export type LoginInput = z.infer<typeof loginSchema>
 
 export const forgotPasswordSchema = z.object({
   email: z.string()
+  .trim()
+  .toLowerCase()
   .min(1 , "Email is required")
   .email("Please enter a valid email address")
 })
@@ -27,6 +30,7 @@ export const registerSchema = z
   .object({
     username: z
       .string()
+      .trim()
       .min(1, "Username is required")
       .min(3, "Username must be at least 3 characters")
       .max(24, "Username must not exceed 24 characters")
@@ -36,6 +40,8 @@ export const registerSchema = z
       ),
     email: z
       .string()
+      .trim()
+      .toLowerCase()
       .min(1, "Email is required")
       .email("Please enter a valid email address"),
     password: z

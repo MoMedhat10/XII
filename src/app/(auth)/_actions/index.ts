@@ -11,6 +11,7 @@ import { createUser, findExistingUser, findUserById } from "../_utils/user"
 import { createVerificationCode, deleteVerificationCodeById, deleteVerificationCodes, getVerificationCode, verifyUserEmail } from "../_utils/verificationCode"
 import { rateLimit, rateLimitOrThrow, ServiceUnavailableError } from "../_utils/rateLimit"
 import { logger } from "../../../../lib/pino"
+import { Prisma } from "@/app/generated/prisma/client"
 
 
 
@@ -47,14 +48,14 @@ export const registerUser = async (data: RegisterInput): AuthRes => {
         const existingUser = await findExistingUser(username, email);
 
         if (existingUser) {
-            if (existingUser.username === username) {
+            if (existingUser.username.toLowerCase() === username.toLowerCase()) {
                 return {
                     success: false,
                     message: "Username already exists",
                 };
             }
 
-            if (existingUser.email === email) {
+            if (existingUser.email.toLowerCase() === email.toLowerCase()) {
                 return {
                     success: false,
                     message: "Email already exists",
@@ -62,11 +63,24 @@ export const registerUser = async (data: RegisterInput): AuthRes => {
             }
         }
 
-        const user = await createUser({
-            username,
-            email,
-            password,
-        });
+        let user;
+        try {
+            user = await createUser({
+                username,
+                email,
+                password,
+            });
+        } catch (error) {
+            // two concurrent registrations can both pass the check above
+            if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+                const target = String(error.meta?.target ?? "");
+                return {
+                    success: false,
+                    message: target.includes("username") ? "Username already exists" : "Email already exists",
+                };
+            }
+            throw error;
+        }
 
         const [otp, otpHash] = generateOTPAndHashedOTP();
 
