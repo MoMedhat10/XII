@@ -105,7 +105,7 @@ model Watch {
   priceCents  Int
   stock       Int
   brandId     String
-  isActive    Boolean  @default(true)
+  isActive    Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

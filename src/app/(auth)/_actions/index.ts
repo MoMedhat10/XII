@@ -16,6 +16,7 @@ import { logger } from "../../../../lib/pino"
 
 type AuthRes = Promise<{ success: boolean, message: string, data?: string }>;
 
+// review or change the reset password to verify users
 export const registerUser = async (data: RegisterInput): AuthRes => {
     try {
         const result = registerSchema.safeParse(data)

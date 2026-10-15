@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils"
 
 import { gutter } from "../home/styles"
 
-export function WishlistFooter() {
+export function AppFooter() {
   return (
     <footer id="footer" className="border-t-4 bg-background">
       <div className="border-t-4">

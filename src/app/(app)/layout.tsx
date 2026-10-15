@@ -1,6 +1,6 @@
 import { BackButton } from "@/components/back-button"
 import { gutter } from "@/components/home/styles"
-import { WishlistFooter } from "@/components/wishlist/wishlist-footer"
+import { AppFooter } from "@/components/wishlist/app-footer"
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -13,7 +13,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
         {children}
       </main>
-      <WishlistFooter />
+      <AppFooter />
     </div>
   )
 }
