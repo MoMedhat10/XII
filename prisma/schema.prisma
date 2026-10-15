@@ -90,7 +90,7 @@ model Brand {
   id          String   @id @default(uuid())
   name        String   @unique
   description String
-  logoUrl     String
+  logoKey     String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -121,15 +121,18 @@ model Watch {
 }
 
 model WatchImage {
-  id        String   @id @default(uuid())
-  watchId   String
-  url       String
-  sortOrder Int      @default(0)
-  createdAt DateTime @default(now())
+  id          String   @id @default(uuid())
+  watchId     String
+  key         String   @unique // "watches/<watchId>/<uuid>.webp", not a URL
+  alt         String   @default("")
+  width       Int?
+  height      Int?
+  sizeBytes   Int
+  contentType String
+  sortOrder   Int
+  createdAt   DateTime @default(now())
 
   watch Watch @relation(fields: [watchId], references: [id], onDelete: Cascade)
-
-  @@unique([watchId, sortOrder])
 }
 
 model FavoriteWatch {
