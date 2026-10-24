@@ -133,6 +133,7 @@ model WatchImage {
   createdAt   DateTime @default(now())
 
   watch Watch @relation(fields: [watchId], references: [id], onDelete: Cascade)
+  @@unique([watchId, sortOrder])
 }
 
 model FavoriteWatch {
