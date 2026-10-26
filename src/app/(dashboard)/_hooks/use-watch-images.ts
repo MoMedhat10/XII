@@ -3,7 +3,7 @@
 import { startTransition, useState } from "react"
 import { toast } from "sonner"
 
-import type { DeleteTarget } from "@/components/dashboard/watches/confirm-delete-dialog"
+import type { DeleteTarget } from "./types"
 
 import type { AdminWatch, AdminWatchImage } from "../_data/types"
 import { MAX_WATCH_IMAGES } from "../_utils/upload-rules"

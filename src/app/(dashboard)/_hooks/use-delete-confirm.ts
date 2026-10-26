@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react"
 import { toast } from "sonner"
 
-import type { DeleteTarget } from "@/components/dashboard/watches/confirm-delete-dialog"
+import type { DeleteTarget } from "./types"
 
 import { errorMessage } from "../_utils/watches-client"
 

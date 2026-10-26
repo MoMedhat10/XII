@@ -3,8 +3,7 @@
 import { useRef, useState, useTransition } from "react"
 import { toast } from "sonner"
 
-import type { BrandDialogState } from "@/components/dashboard/watches/brand-dialog"
-import type { DeleteTarget } from "@/components/dashboard/watches/confirm-delete-dialog"
+import type { BrandDialogState, DeleteTarget } from "./types"
 
 import type { AdminBrand } from "../_data/types"
 import { uploadBrandLogo } from "../_utils/brand-upload"

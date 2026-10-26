@@ -3,8 +3,7 @@
 import { startTransition, useState, useTransition } from "react"
 import { toast } from "sonner"
 
-import type { DeleteTarget } from "@/components/dashboard/watches/confirm-delete-dialog"
-import type { WatchDrawerState } from "@/components/dashboard/watches/watch-drawer"
+import type { DeleteTarget, WatchDrawerState } from "./types"
 
 import type { AdminWatch } from "../_data/types"
 import type { WatchFormInput } from "../_utils/watch-schema"

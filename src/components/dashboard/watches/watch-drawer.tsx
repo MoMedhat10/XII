@@ -5,10 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Controller, useForm, useWatch } from "react-hook-form"
 import { toast } from "sonner"
 
-import type {
-  AdminBrand,
-  AdminWatch,
-} from "@/app/(dashboard)/_data/types"
+import type { AdminBrand, AdminWatch } from "@/app/(dashboard)/_data/types"
 import {
   formatPriceInput,
   watchFormSchema,
@@ -39,9 +36,7 @@ import {
   textLink,
 } from "./watch-utils"
 import { MAX_STOCK } from "@/app/(dashboard)/_utils/upload-rules"
-
-export type WatchDrawerState =
-  { mode: "create"; brandId: string } | { mode: "edit"; watch: AdminWatch }
+import type { WatchDrawerState } from "@/app/(dashboard)/_hooks/types"
 
 function toDefaults(state: WatchDrawerState): WatchFormInput {
   if (state.mode === "create") {

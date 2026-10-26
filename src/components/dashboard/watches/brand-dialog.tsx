@@ -36,12 +36,7 @@ import {
   portalTheme,
 } from "./watch-utils"
 import { BRAND_LOGO_TYPES } from "@/app/(dashboard)/_utils/upload-rules"
-
-export type BrandDialogState = {
-  brand: AdminBrand | null
-  /** Opened from the watch drawer: the new brand gets selected there. */
-  fromWatch: boolean
-}
+import type { BrandDialogState } from "@/app/(dashboard)/_hooks/types"
 
 export function BrandDialog({
   open,
@@ -169,7 +164,9 @@ function BrandForm({
                 type="button"
                 onClick={() => logoInput.current?.click()}
                 aria-label={field.value ? "Replace logo" : "Upload logo"}
-                aria-describedby={fieldState.error ? `${uid}-logo-error` : undefined}
+                aria-describedby={
+                  fieldState.error ? `${uid}-logo-error` : undefined
+                }
                 className={cn(
                   "circle flex size-24 shrink-0 items-center justify-center overflow-hidden border-[3px] border-dashed border-gold bg-[#141515] font-heading text-[11px] font-bold tracking-[1px] text-gold transition-colors hover:border-foreground hover:text-foreground",
                   fieldState.error && "border-destructive text-destructive"
@@ -190,7 +187,11 @@ function BrandForm({
                   SVG or PNG on transparent. Shown on cards and filters.
                 </span>
                 {fieldState.error && (
-                  <span id={`${uid}-logo-error`} role="alert" className={fieldError}>
+                  <span
+                    id={`${uid}-logo-error`}
+                    role="alert"
+                    className={fieldError}
+                  >
                     {fieldState.error.message}
                   </span>
                 )}
@@ -212,7 +213,9 @@ function BrandForm({
                   revokePreview(field.value)
                   setValue("logoFile", file)
                   // preview; also clears the "Logo is required." error
-                  setValue("logoUrl", URL.createObjectURL(file), { shouldValidate: true })
+                  setValue("logoUrl", URL.createObjectURL(file), {
+                    shouldValidate: true,
+                  })
                 }}
               />
             </div>

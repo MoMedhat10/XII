@@ -13,20 +13,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { cn } from "@/lib/utils"
 
 import { btn, btnGold, btnOutline, eyebrowSm, portalTheme } from "./watch-utils"
-
-export type DeleteTarget =
-  | { kind: "watch"; id: string; name: string }
-  | { kind: "brand"; id: string; name: string }
-  | {
-      kind: "image"
-      id: string
-      name: string
-      watchId: string
-      url: string
-      position: number
-      isCover: boolean
-      isLastOfLive: boolean
-    }
+import type { DeleteTarget } from "@/app/(dashboard)/_hooks/types"
 
 const BODY: Record<Exclude<DeleteTarget["kind"], "image">, string> = {
   watch:
@@ -58,8 +45,8 @@ function Body({ target }: { target: DeleteTarget }) {
       {target.isCover && <> The next image becomes the cover.</>}
       {target.isLastOfLive && (
         <strong className="mt-2 block font-semibold text-gold">
-          This is its only image, so the watch will be unpublished and moved
-          to drafts.
+          This is its only image, so the watch will be unpublished and moved to
+          drafts.
         </strong>
       )}
     </>
