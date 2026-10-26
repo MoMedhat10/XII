@@ -13,7 +13,6 @@ import { createBrand, deleteBrand, updateBrand } from "../actions/brands"
 import type { WatchFiltersApi } from "./use-watch-filters"
 import type { WatchList } from "./use-watch-list"
 
-/** The brands drawer, the create/edit brand dialog, and brand deletes. */
 export function useBrands({
   list,
   filters,
@@ -22,18 +21,15 @@ export function useBrands({
   filters: WatchFiltersApi
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false)
-  // Keeps its last subject while closing, like the watch drawer.
   const [dialog, setDialog] = useState<{
     open: boolean
     state: BrandDialogState
   }>({ open: false, state: { brand: null, fromWatch: false } })
   const [saving, setSaving] = useState(false)
-  /** the brand created most recently, highlighted in the drawer */
   const [freshId, setFreshId] = useState<string | null>(null)
   /** set when the dialog was opened from the watch drawer: selects the new brand there */
   const selectInWatchDrawer = useRef<((brand: AdminBrand) => void) | null>(null)
 
-  /** Pass `select` when opening from the watch drawer. */
   const openNew = (select?: (brand: AdminBrand) => void) => {
     selectInWatchDrawer.current = select ?? null
     setDialog({ open: true, state: { brand: null, fromWatch: !!select } })
@@ -44,25 +40,21 @@ export function useBrands({
     setDialog({ open: true, state: { brand, fromWatch: false } })
   }
 
-  /** Ignored while saving, so the dialog can't close mid-request. */
   const onDialogOpenChange = (open: boolean) => {
     if (saving) return
     if (!open) selectInWatchDrawer.current = null
     setDialog((d) => ({ ...d, open }))
   }
 
-  /** Resolves when saved; throws to keep the dialog open. */
   const save = async (values: BrandFormInput) => {
     const { brand: existing, fromWatch } = dialog.state
     setSaving(true)
     try {
-      // 1. bytes → storage (only if a new file was picked)
       if (!existing && !values.logoFile) throw new Error("Logo is required.")
       const newKey = values.logoFile
         ? await uploadBrandLogo(values.logoFile)
         : null
 
-      // 2. record → database
       const res = existing
         ? await updateBrand({
             id: existing.id,
@@ -78,8 +70,8 @@ export function useBrands({
             logoKey: newKey!,
           })
 
-      if (!res.success) throw new Error(res.message) // dialog stays open + toast
-      const saved = res.data // real id, real logo URL
+      if (!res.success) throw new Error(res.message)
+      const saved = res.data
 
       list.setBrands((brands) =>
         existing
@@ -98,7 +90,6 @@ export function useBrands({
     }
   }
 
-  /** Run by the delete confirmation. Clears the brand filter if it was this brand. */
   const remove = async (target: Extract<DeleteTarget, { kind: "brand" }>) => {
     const res = await deleteBrand(target.id)
     if (!res.success) throw new Error(res.message)

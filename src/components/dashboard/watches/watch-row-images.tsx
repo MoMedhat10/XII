@@ -11,7 +11,6 @@ import { cn } from "@/lib/utils"
 const tileBtn =
   "absolute flex items-center justify-center bg-[#141515] font-heading font-bold text-foreground transition-colors hover:bg-gold hover:text-black disabled:pointer-events-none"
 
-/** Inline image strip: cover tag, upload progress, delete, set-cover and add tiles. */
 export function WatchRowImages({
   watch,
   busy,
@@ -20,10 +19,8 @@ export function WatchRowImages({
   onSetCover,
 }: {
   watch: AdminWatch
-  /** an upload or reorder is in flight for this watch */
   busy: boolean
   onAdd: (watch: AdminWatch) => void
-  /** opens the delete confirmation */
   onRemove: (watch: AdminWatch, image: AdminWatchImage) => void
   onSetCover: (watch: AdminWatch, imageId: string) => void
 }) {

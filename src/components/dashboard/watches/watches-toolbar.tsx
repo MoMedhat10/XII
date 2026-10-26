@@ -27,7 +27,6 @@ export function WatchesToolbar({
   filters: WatchFilters
   brands: AdminBrand[]
   onChange: (patch: Partial<WatchFilters>) => void
-  /** resets search, brand and status */
   onClear: () => void
 }) {
   const filtered =

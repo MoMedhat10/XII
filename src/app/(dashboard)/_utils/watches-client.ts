@@ -1,4 +1,3 @@
-// Plain helpers for the admin watches page (client side, no React state).
 import type { Dispatch, SetStateAction } from "react"
 
 import type { AdminWatch } from "../_data/types"
@@ -13,7 +12,6 @@ export const DEFAULT_FILTERS: WatchFilters = {
 
 export const SEARCH_DEBOUNCE_MS = 300
 
-/** The list URL for these filters, leaving out default values. */
 export function hrefFor(pathname: string, filters: WatchFilters) {
   const params = new URLSearchParams()
   for (const key of Object.keys(DEFAULT_FILTERS) as (keyof WatchFilters)[]) {
@@ -29,7 +27,6 @@ export function hrefFor(pathname: string, filters: WatchFilters) {
 export const errorMessage = (error: unknown, fallback: string) =>
   error instanceof Error ? error.message : fallback
 
-/** Adds or removes an id from a Set held in state. */
 export const toggleId =
   (setter: Dispatch<SetStateAction<ReadonlySet<string>>>) =>
   (id: string, on: boolean) =>

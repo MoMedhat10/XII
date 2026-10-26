@@ -64,7 +64,6 @@ export function BrandsDrawer({
 }: {
   open: boolean
   brands: AdminBrand[]
-  /** The brand created most recently, highlighted in the list. */
   freshId: string | null
   onOpenChange: (open: boolean) => void
   onNewBrand: () => void

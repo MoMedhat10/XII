@@ -20,7 +20,7 @@ import { fail, type ActionRes } from "../_utils/action-result"
 async function promoteLogo(tmpKey: string) {
   const ok = await verifyUploadedImage(tmpKey, { maxBytes: MAX_BRAND_LOGO_BYTES, allowed: BRAND_LOGO_TYPES })
   if (!ok) return null
-  const key = tmpKey.replace(/^tmp\//, "") // tmp/brands/x.png → brands/x.png
+  const key = tmpKey.replace(/^tmp\//, "")
   await moveObject(tmpKey, key)
   return key
 }
@@ -40,8 +40,6 @@ function prismaFail(error: unknown, where: string) {
   return fail("Something went wrong. Please try again.")
 }
 
-// ── 1. permission to upload a logo ──
-
 export async function createBrandLogoUpload(input: {
   contentType: string
   size: number
@@ -54,8 +52,6 @@ export async function createBrandLogoUpload(input: {
   const url = await createPresignedPut(key, parsed.data.contentType)
   return { success: true, message: "OK", data: { key, url } }
 }
-
-// ── 2. create ──
 
 export async function createBrand(input: CreateBrandInput): Promise<ActionRes<AdminBrand>> {
   await requireAdmin()
@@ -75,8 +71,6 @@ export async function createBrand(input: CreateBrandInput): Promise<ActionRes<Ad
     return prismaFail(error, "createBrand")
   }
 }
-
-// ── 3. update (keep / remove / replace logo) ──
 
 export async function updateBrand(input: UpdateBrandInput): Promise<ActionRes<AdminBrand>> {
   await requireAdmin()
@@ -105,8 +99,6 @@ export async function updateBrand(input: UpdateBrandInput): Promise<ActionRes<Ad
     return prismaFail(error, "updateBrand")
   }
 }
-
-// ── 4. delete ──
 
 export async function deleteBrand(id: string): Promise<ActionRes<null>> {
   await requireAdmin()

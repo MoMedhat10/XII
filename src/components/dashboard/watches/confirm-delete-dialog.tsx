@@ -20,15 +20,11 @@ export type DeleteTarget =
   | {
       kind: "image"
       id: string
-      /** the watch's name */
       name: string
       watchId: string
       url: string
-      /** 1-based position in the row */
       position: number
-      /** another image takes over as cover */
       isCover: boolean
-      /** deleting it unpublishes the watch */
       isLastOfLive: boolean
     }
 

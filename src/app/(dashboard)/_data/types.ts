@@ -1,5 +1,3 @@
-// Plain DTOs passed from the server to the admin's client components.
-
 export type AdminBrand = {
   id: string
   name: string
@@ -30,7 +28,6 @@ export type AdminWatch = {
   updatedAt: string
 }
 
-/** One page of the filtered watch list. */
 export type AdminWatchPage = {
   watches: AdminWatch[]
   /** watches matching the filters */

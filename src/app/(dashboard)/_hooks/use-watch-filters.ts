@@ -62,7 +62,6 @@ export function useWatchFilters({
     navigate({ ...filters, q: search.trim(), page: 1, ...patch })
   }
 
-  /** Debounced: navigates once typing pauses. */
   const changeSearch = (value: string) => {
     setSearch(value)
     clearTimeout(searchTimer.current)
@@ -83,7 +82,6 @@ export function useWatchFilters({
   return {
     filters,
     search,
-    /** a filter change is loading */
     navigating,
     updateFilters,
     changeSearch,

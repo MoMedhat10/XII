@@ -82,7 +82,6 @@ export function WatchDrawer({
   onOpenChange: (open: boolean) => void
   /** Resolves when saved; throws to keep the drawer open. */
   onSubmit: (values: WatchFormInput) => Promise<void>
-  /** Opens the brand dialog; the callback selects the brand it creates. */
   onCreateBrand: (select: (brand: AdminBrand) => void) => void
   onDelete: (watch: AdminWatch) => void
 }) {
@@ -148,7 +147,6 @@ function WatchForm({
   const busy = isSubmitting || saving
 
   const submit = async (values: WatchFormInput) => {
-    // nothing changed: no request, just close
     if (editing && !isDirty) return onClose()
     try {
       await onSubmit(values)

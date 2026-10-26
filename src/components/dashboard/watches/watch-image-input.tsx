@@ -4,7 +4,6 @@ import type { Ref } from "react"
 
 import { WATCH_IMAGE_TYPES } from "@/app/(dashboard)/_utils/upload-rules"
 
-/** The hidden file input behind every row's "+" tile. */
 export function WatchImageInput({
   ref,
   onFiles,

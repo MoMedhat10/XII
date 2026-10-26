@@ -49,10 +49,6 @@ const IMAGES_CHANGED = "Images changed, please refresh and try again."
 const HAS_ORDERS =
   "This watch has orders and can't be deleted. Unpublish it instead."
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 async function removeObjects(keys: string[]) {
   await deleteObjects(keys).catch((error) =>
     logger.warn({ error, keys }, "image delete failed")
@@ -70,7 +66,6 @@ async function lockWatch(tx: Prisma.TransactionClient, id: string) {
   return rows.length > 0
 }
 
-/** Ends a transaction early with a message for the admin. */
 class ActionError extends Error {}
 
 /**
@@ -94,7 +89,7 @@ async function promoteImages(watchId: string, tmpKeys: string[]) {
 
   const images = tmpKeys.map((tmpKey, i) => ({
     tmpKey,
-    key: tmpKey.replace(/^tmp\/watches\//, `watches/${watchId}/`), // tmp/watches/x.png → watches/<id>/x.png
+    key: tmpKey.replace(/^tmp\/watches\//, `watches/${watchId}/`),
     ...checks[i]!,
   }))
 
@@ -125,11 +120,6 @@ function actionFail(
   return fail("Something went wrong. Please try again.")
 }
 
-// ---------------------------------------------------------------------------
-// Watches
-// ---------------------------------------------------------------------------
-
-/** Always created as a draft with no images. */
 export async function createWatch(
   input: CreateWatchInput
 ): Promise<ActionRes<AdminWatch>> {
@@ -187,7 +177,6 @@ export async function updateWatch(
         data: { ...fields, priceCents: parsePriceInput(price) * 100 },
       })
 
-      // keep alt text in step with the name ("<name>, view N")
       if (current.name !== fields.name) {
         const images = await tx.watchImage.findMany({
           where: { watchId: id },
@@ -244,7 +233,6 @@ export async function setWatchActive(
   }
 }
 
-/** Deletes the watch, its image rows (cascade) and its image files. */
 export async function deleteWatch(
   input: DeleteWatchInput
 ): Promise<ActionRes<{ id: string; brandId: string }>> {
@@ -283,11 +271,6 @@ export async function deleteWatch(
   }
 }
 
-// ---------------------------------------------------------------------------
-// Watch images
-// ---------------------------------------------------------------------------
-
-/** Permission to upload one image to tmp storage. */
 export async function createWatchImageUpload(input: {
   contentType: string
   size: number
@@ -301,7 +284,6 @@ export async function createWatchImageUpload(input: {
   return { success: true, message: "OK", data: { key, url } }
 }
 
-/** Attaches uploaded tmp images to a watch, after its current ones. */
 export async function addWatchImages(
   input: AddWatchImagesInput
 ): Promise<ActionRes<AdminWatchImage[]>> {
@@ -422,7 +404,6 @@ export async function deleteWatchImage(
       }
     })
 
-    // committed: the file is unreferenced now
     await removeObjects([result.key])
     revalidatePath(PATH)
     return {
@@ -441,7 +422,6 @@ export async function deleteWatchImage(
   }
 }
 
-/** Saves a new image order. The first image is the cover. */
 export async function reorderWatchImages(
   input: ReorderWatchImagesInput
 ): Promise<ActionRes<AdminWatchImage[]>> {

@@ -25,7 +25,6 @@ export function WatchesError({ onRetry }: { onRetry: () => void }) {
   return (
     <div role="alert" className={panel}>
       <div aria-hidden="true" className={dial} />
-      {/* Stopped hands */}
       <div
         aria-hidden="true"
         className="absolute h-[170px] w-1 origin-bottom -translate-y-[85px] -rotate-[52deg] bg-gold"

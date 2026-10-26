@@ -22,10 +22,6 @@ export const initials = (name: string) =>
 export const brandNameFor = (brands: AdminBrand[], id: string) =>
   brands.find((brand) => brand.id === id)?.name ?? "—"
 
-// ---------------------------------------------------------------------------
-// Shared class names for the admin's dark, brutalist controls
-// ---------------------------------------------------------------------------
-
 /** Radix portals render outside the shell, so modals re-apply the theme. */
 export const portalTheme = "dark text-foreground"
 

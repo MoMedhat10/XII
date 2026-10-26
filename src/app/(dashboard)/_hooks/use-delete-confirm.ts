@@ -14,12 +14,7 @@ export type DeleteRunners = {
   ) => Promise<string>
 }
 
-/**
- * The shared "Are you sure?" dialog. It only handles open/pending/close and
- * toasts; the actual delete comes from the hook that owns that kind.
- */
 export function useDeleteConfirm({ run }: { run: DeleteRunners }) {
-  // Keeps its last target while closing, so the exit animation has content.
   const [confirm, setConfirm] = useState<{
     open: boolean
     target: DeleteTarget | null
@@ -28,7 +23,6 @@ export function useDeleteConfirm({ run }: { run: DeleteRunners }) {
 
   const ask = (target: DeleteTarget) => setConfirm({ open: true, target })
 
-  /** Ignored while deleting, so the dialog can't close mid-request. */
   const onOpenChange = (open: boolean) => {
     if (!deleting) setConfirm((c) => ({ ...c, open }))
   }

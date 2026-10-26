@@ -1,7 +1,6 @@
 import { createWatchImageUpload } from "../actions/watches"
 import { putWithProgress } from "@/lib/upload-client"
 
-/** Uploads one image to tmp storage and returns its key for createWatch. */
 export async function uploadWatchImage(
   file: File,
   onProgress?: (pct: number) => void

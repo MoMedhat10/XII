@@ -21,7 +21,7 @@ export const logoUploadSchema = z.object({
 
 export const createBrandSchema = z.object({
   ...brandFields,
-  logoKey: tmpLogoKey, // every brand needs a logo
+  logoKey: tmpLogoKey,
 })
 
 export const updateBrandSchema = z.object({

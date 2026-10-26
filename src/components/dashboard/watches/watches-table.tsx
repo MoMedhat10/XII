@@ -58,7 +58,6 @@ function StockLabel({ stock }: { stock: number }) {
   )
 }
 
-/** Stops row clicks from firing when using a control inside the row. */
 const stop = (event: React.SyntheticEvent) => event.stopPropagation()
 
 export function WatchesTable({
@@ -71,7 +70,6 @@ export function WatchesTable({
   watches: AdminWatch[]
   brands: AdminBrand[]
   pendingIds: ReadonlySet<string>
-  /** watches with an image upload or reorder in flight */
   imageBusyIds: ReadonlySet<string>
   handlers: WatchRowHandlers
 }) {

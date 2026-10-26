@@ -17,7 +17,6 @@ import {
 } from "../actions/watches"
 import type { WatchList } from "./use-watch-list"
 
-/** The create/edit drawer, plus the other watch-level actions. */
 export function useWatchDrawer({ list }: { list: WatchList }) {
   // Keeps its last subject while closing, so the exit animation never
   // renders empty content.
@@ -35,7 +34,6 @@ export function useWatchDrawer({ list }: { list: WatchList }) {
 
   const close = () => setDrawer((d) => ({ ...d, open: false }))
 
-  /** Ignored while saving, so the drawer can't close mid-request. */
   const onOpenChange = (open: boolean) => {
     if (!saving) setDrawer((d) => ({ ...d, open }))
   }
@@ -44,7 +42,7 @@ export function useWatchDrawer({ list }: { list: WatchList }) {
     // always created as a draft with no images; both are added from the row.
     // The action's refresh shows it in the list when it matches the filters.
     const res = await createWatch(values)
-    if (!res.success) throw new Error(res.message) // drawer stays open + toast
+    if (!res.success) throw new Error(res.message)
     close()
     toast.success(`${res.message} · ${res.data.name}`)
   }
@@ -67,7 +65,6 @@ export function useWatchDrawer({ list }: { list: WatchList }) {
     toast.success(`${res.message} · ${saved.name}`)
   }
 
-  /** Resolves when saved; throws to keep the drawer open. */
   const save = async (values: WatchFormInput) => {
     const { state } = drawer
     setSaving(true)

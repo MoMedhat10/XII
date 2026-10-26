@@ -19,13 +19,11 @@ import type { WatchList } from "./use-watch-list"
 
 type ImageTarget = Extract<DeleteTarget, { kind: "image" }>
 
-/** Row images: add (upload), set cover, and delete via the confirm dialog. */
 export function useWatchImages({ list }: { list: WatchList }) {
   // State, not refs: the component reads this hook's result during render,
   // and the React Compiler lint forbids passing refs around that way.
   /** the hidden file input shared by every row's "+" tile (set by a callback ref) */
   const [fileInput, setFileInput] = useState<HTMLInputElement | null>(null)
-  /** the watch the next picked files belong to */
   const [uploadTarget, setUploadTarget] = useState<string | null>(null)
 
   const pick = (watch: AdminWatch) => {
@@ -91,7 +89,6 @@ export function useWatchImages({ list }: { list: WatchList }) {
     list.setImageBusy(watchId, true)
 
     try {
-      // 1. bytes → tmp storage, one request per file with real progress
       const results = await Promise.allSettled(
         drafts.map((d) =>
           uploadWatchImage(d.file, (pct) => setProgress(d.image.id, pct))
@@ -110,7 +107,6 @@ export function useWatchImages({ list }: { list: WatchList }) {
         return
       }
 
-      // 2. rows → database; the server list replaces the placeholders
       const res = await addWatchImages({ watchId, imageKeys })
       if (!res.success) throw new Error(res.message)
       list.patchWatch(watchId, (w) => ({ ...w, images: res.data }))
@@ -124,7 +120,6 @@ export function useWatchImages({ list }: { list: WatchList }) {
     }
   }
 
-  /** For the hidden input's onChange. */
   const onFilesPicked = (files: FileList | null) => {
     if (uploadTarget) upload(uploadTarget, files)
   }
@@ -153,7 +148,6 @@ export function useWatchImages({ list }: { list: WatchList }) {
     }
   }
 
-  /** What the delete confirmation shows for this image. */
   const deleteTarget = (
     watch: AdminWatch,
     image: AdminWatchImage
@@ -184,7 +178,6 @@ export function useWatchImages({ list }: { list: WatchList }) {
   }
 
   return {
-    /** callback ref for <WatchImageInput> */
     setFileInput,
     pick,
     onFilesPicked,

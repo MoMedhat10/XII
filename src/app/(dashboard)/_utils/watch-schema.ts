@@ -4,10 +4,6 @@ import { brandFields } from "./brand-schema"
 
 
 
-// ---------------------------------------------------------------------------
-// Files (validated when picked, before they enter state)
-// ---------------------------------------------------------------------------
-
 export const watchImageFileSchema = z
   .instanceof(File, { message: "Select an image file" })
   .refine(
@@ -30,25 +26,16 @@ export const brandLogoFileSchema = z
     "Logos must be 2 MB or smaller"
   )
 
-// ---------------------------------------------------------------------------
-// Price input: whole US dollars typed as "12,400"
-// ---------------------------------------------------------------------------
-
 /** "12,400" → 12400. Returns NaN when there are no digits. */
 export const parsePriceInput = (value: string) => {
   const digits = value.replace(/[^\d]/g, "")
   return digits ? Number.parseInt(digits, 10) : Number.NaN
 }
 
-/** Keeps only digits and adds thousands separators while typing. */
 export const formatPriceInput = (value: string) => {
   const amount = parsePriceInput(value)
   return Number.isNaN(amount) ? "" : amount.toLocaleString("en-US")
 }
-
-// ---------------------------------------------------------------------------
-// Watch drawer form
-// ---------------------------------------------------------------------------
 
 export const watchFormSchema = z.object({
   name: z
@@ -82,10 +69,6 @@ export const watchFormSchema = z.object({
 
 export type WatchFormInput = z.infer<typeof watchFormSchema>
 
-// ---------------------------------------------------------------------------
-// Server action inputs
-// ---------------------------------------------------------------------------
-
 const tmpWatchImageKey = z
   .string()
   .regex(/^tmp\/watches\/[0-9a-f-]{36}\.(png|webp|jpg)$/, "Invalid image upload.")
@@ -101,7 +84,6 @@ export const watchImageUploadSchema = z.object({
 
 const unique = (values: string[]) => new Set(values).size === values.length
 
-// a new watch has no images: they're added from the table row afterwards
 export const createWatchSchema = watchFormSchema.extend({
   brandId: z.uuid("Pick a brand."),
 })
@@ -150,10 +132,6 @@ export type AddWatchImagesInput = z.infer<typeof addWatchImagesSchema>
 export type DeleteWatchImageInput = z.infer<typeof deleteWatchImageSchema>
 export type ReorderWatchImagesInput = z.infer<typeof reorderWatchImagesSchema>
 
-// ---------------------------------------------------------------------------
-// Brand dialog form (names are unique, case-insensitively, like the DB)
-// ---------------------------------------------------------------------------
-
 export function createBrandFormSchema(brands: { id: string; name: string }[], editingId: string | null) {
   return z.object({
     name: brandFields.name.refine(
@@ -173,18 +151,12 @@ export function createBrandFormSchema(brands: { id: string; name: string }[], ed
 
 export type BrandFormInput = z.infer<ReturnType<typeof createBrandFormSchema>>
 
-// ---------------------------------------------------------------------------
-// List filters (parsed from the URL, so every field falls back safely)
-// ---------------------------------------------------------------------------
-
 export const WATCH_STATUS_FILTERS = ["all", "live", "draft"] as const
 
-/** Rows per page in the admin watch list (shared by the query and the UI). */
 export const WATCHES_PAGE_SIZE = 6
 
 export const watchFiltersSchema = z.object({
   q: z.string().trim().max(100).catch(""),
-  // anything that isn't a real id falls back to "all brands"
   brand: z.union([z.uuid(), z.literal("")]).catch(""),
   status: z.enum(WATCH_STATUS_FILTERS).catch("all"),
   page: z.coerce.number().int().min(1).catch(1),

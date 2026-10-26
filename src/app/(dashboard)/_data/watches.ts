@@ -68,7 +68,6 @@ function filtersWhere({
   }
 }
 
-/** One page of watches matching the URL filters, newest first. */
 export async function getAdminWatchPage(
   filters: WatchFilters
 ): Promise<AdminWatchPage> {
@@ -104,7 +103,6 @@ export async function getAdminWatchPage(
   })
 }
 
-/** A watch's images in display order (first = cover). */
 export async function getAdminWatchImages(watchId: string) {
   const rows = await prisma.watchImage.findMany({
     where: { watchId },

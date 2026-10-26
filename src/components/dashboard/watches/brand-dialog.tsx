@@ -56,7 +56,6 @@ export function BrandDialog({
   brands: AdminBrand[]
   saving: boolean
   onOpenChange: (open: boolean) => void
-  /** Resolves when saved; throws to keep the dialog open. */
   onSubmit: (values: BrandFormInput) => Promise<void>
 }) {
   return (

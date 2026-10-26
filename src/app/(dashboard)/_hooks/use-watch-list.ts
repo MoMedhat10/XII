@@ -15,7 +15,6 @@ export function useWatchList({
 }) {
   const [watches, setWatches] = useState(data.watches)
   const [brands, setBrands] = useState(serverBrands)
-  /** rows whose live toggle is saving */
   const [pendingIds, setPendingIds] = useState<ReadonlySet<string>>(new Set())
   /** rows with an image upload or reorder in flight (image controls lock) */
   const [imageBusyIds, setImageBusyIds] = useState<ReadonlySet<string>>(
@@ -41,7 +40,6 @@ export function useWatchList({
     setWatches((list) => list.filter((w) => w.id !== id))
 
   return {
-    /** the server's page info and counts */
     data,
     watches,
     brands,

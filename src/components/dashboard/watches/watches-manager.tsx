@@ -85,7 +85,6 @@ export function WatchesManager({
             }
             onClear={filters.clearFilters}
           />
-          {/* the previous results stay visible, dimmed, while the next load */}
           <div
             aria-busy={filters.navigating || undefined}
             className={cn(
