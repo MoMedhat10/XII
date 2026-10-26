@@ -2,7 +2,7 @@ import "server-only"
 import type { Prisma } from "@/app/generated/prisma/client"
 import prisma from "../../../../lib/prisma"
 import { getPublicUrl } from "../../../../lib/storage"
-import { requireAdmin } from "../_utils/require-admin"
+import { requireAdmin } from "../_server/require-admin"
 import type { AdminBrand } from "./types"
 
 export const brandSelect = {

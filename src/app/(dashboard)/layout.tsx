@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 
 import { AdminShell } from "@/components/dashboard/admin-shell"
-import { requireAdmin } from "./_utils/require-admin"
+import { requireAdmin } from "./_server/require-admin"
 
 export const metadata: Metadata = {
   title: "Admin — XII",

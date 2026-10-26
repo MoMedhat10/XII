@@ -1,8 +1,11 @@
 import { z } from "zod"
-import { BRAND_LOGO_TYPES, MAX_BRAND_LOGO_BYTES, MAX_PRICE_DOLLARS, MAX_STOCK, MAX_WATCH_IMAGE_BYTES, MAX_WATCH_IMAGES, WATCH_IMAGE_TYPES } from "./upload-rules"
-import { brandFields } from "./brand-schema"
-
-
+import {
+  MAX_PRICE_DOLLARS,
+  MAX_STOCK,
+  MAX_WATCH_IMAGE_BYTES,
+  MAX_WATCH_IMAGES,
+  WATCH_IMAGE_TYPES,
+} from "./upload-rules"
 
 export const watchImageFileSchema = z
   .instanceof(File, { message: "Select an image file" })
@@ -13,17 +16,6 @@ export const watchImageFileSchema = z
   .refine(
     (file) => file.size <= MAX_WATCH_IMAGE_BYTES,
     "Images must be 5 MB or smaller"
-  )
-
-export const brandLogoFileSchema = z
-  .instanceof(File, { message: "Select an image file" })
-  .refine(
-    (file) => (BRAND_LOGO_TYPES as readonly string[]).includes(file.type),
-    "Use a PNG, WebP or JPG logo"
-  )
-  .refine(
-    (file) => file.size <= MAX_BRAND_LOGO_BYTES,
-    "Logos must be 2 MB or smaller"
   )
 
 /** "12,400" → 12400. Returns NaN when there are no digits. */
@@ -71,7 +63,10 @@ export type WatchFormInput = z.infer<typeof watchFormSchema>
 
 const tmpWatchImageKey = z
   .string()
-  .regex(/^tmp\/watches\/[0-9a-f-]{36}\.(png|webp|jpg)$/, "Invalid image upload.")
+  .regex(
+    /^tmp\/watches\/[0-9a-f-]{36}\.(png|webp|jpg)$/,
+    "Invalid image upload."
+  )
 
 export const watchImageUploadSchema = z.object({
   contentType: z.enum(WATCH_IMAGE_TYPES, "Use a JPEG, PNG or WebP image."),
@@ -131,25 +126,6 @@ export type DeleteWatchInput = z.infer<typeof deleteWatchSchema>
 export type AddWatchImagesInput = z.infer<typeof addWatchImagesSchema>
 export type DeleteWatchImageInput = z.infer<typeof deleteWatchImageSchema>
 export type ReorderWatchImagesInput = z.infer<typeof reorderWatchImagesSchema>
-
-export function createBrandFormSchema(brands: { id: string; name: string }[], editingId: string | null) {
-  return z.object({
-    name: brandFields.name.refine(
-      (name) => !brands.some((b) => b.id !== editingId && b.name.toLowerCase() === name.toLowerCase()),
-      { error: (issue) => `"${String(issue.input).trim()}" already exists.` },
-    ),
-    description: brandFields.description,
-    // null = no logo yet; an existing brand's URL or a blob: preview both count
-    logoUrl: z
-      .string()
-      .nullable()
-      // `!!url` (not `url !== null`) so TS doesn't infer a type guard and narrow the output type
-      .refine((url) => !!url, "Logo is required."),
-    logoFile: z.instanceof(File).nullable(),
-  })
-}
-
-export type BrandFormInput = z.infer<ReturnType<typeof createBrandFormSchema>>
 
 export const WATCH_STATUS_FILTERS = ["all", "live", "draft"] as const
 

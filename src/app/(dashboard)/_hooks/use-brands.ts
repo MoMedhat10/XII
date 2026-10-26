@@ -7,7 +7,7 @@ import type { BrandDialogState, DeleteTarget } from "./types"
 
 import type { AdminBrand } from "../_data/types"
 import { uploadBrandLogo } from "../_utils/brand-upload"
-import type { BrandFormInput } from "../_utils/watch-schema"
+import type { BrandFormInput } from "../_utils/brand-schema"
 import { createBrand, deleteBrand, updateBrand } from "../actions/brands"
 import type { WatchFiltersApi } from "./use-watch-filters"
 

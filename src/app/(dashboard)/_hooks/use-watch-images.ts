@@ -14,7 +14,7 @@ import {
   addWatchImages,
   deleteWatchImage,
   reorderWatchImages,
-} from "../actions/watches"
+} from "../actions/watch-images"
 import type { WatchList } from "./use-watch-list"
 
 type ImageTarget = Extract<DeleteTarget, { kind: "image" }>

@@ -2,7 +2,11 @@ import { z } from "zod"
 import { BRAND_LOGO_TYPES, MAX_BRAND_LOGO_BYTES } from "./upload-rules"
 
 export const brandFields = {
-  name: z.string().trim().min(1, "Name is required.").max(60, "Name must not exceed 60 characters."),
+  name: z
+    .string()
+    .trim()
+    .min(1, "Name is required.")
+    .max(60, "Name must not exceed 60 characters."),
   description: z
     .string()
     .trim()
@@ -16,7 +20,11 @@ const tmpLogoKey = z
 
 export const logoUploadSchema = z.object({
   contentType: z.enum(BRAND_LOGO_TYPES, "Use a PNG, WebP or JPEG logo."),
-  size: z.number().int().positive().max(MAX_BRAND_LOGO_BYTES, "Logos must be 2 MB or smaller."),
+  size: z
+    .number()
+    .int()
+    .positive()
+    .max(MAX_BRAND_LOGO_BYTES, "Logos must be 2 MB or smaller."),
 })
 
 export const createBrandSchema = z.object({
@@ -36,3 +44,42 @@ export const updateBrandSchema = z.object({
 
 export type CreateBrandInput = z.infer<typeof createBrandSchema>
 export type UpdateBrandInput = z.infer<typeof updateBrandSchema>
+
+// Browser-side form (names are unique case-insensitively, like the DB)
+
+export const brandLogoFileSchema = z
+  .instanceof(File, { message: "Select an image file" })
+  .refine(
+    (file) => (BRAND_LOGO_TYPES as readonly string[]).includes(file.type),
+    "Use a PNG, WebP or JPG logo"
+  )
+  .refine(
+    (file) => file.size <= MAX_BRAND_LOGO_BYTES,
+    "Logos must be 2 MB or smaller"
+  )
+
+export function createBrandFormSchema(
+  brands: { id: string; name: string }[],
+  editingId: string | null
+) {
+  return z.object({
+    name: brandFields.name.refine(
+      (name) =>
+        !brands.some(
+          (b) =>
+            b.id !== editingId && b.name.toLowerCase() === name.toLowerCase()
+        ),
+      { error: (issue) => `"${String(issue.input).trim()}" already exists.` }
+    ),
+    description: brandFields.description,
+    // null = no logo yet; an existing brand's URL or a blob: preview both count
+    logoUrl: z
+      .string()
+      .nullable()
+      // `!!url` (not `url !== null`) so TS doesn't infer a type guard and narrow the output type
+      .refine((url) => !!url, "Logo is required."),
+    logoFile: z.instanceof(File).nullable(),
+  })
+}
+
+export type BrandFormInput = z.infer<ReturnType<typeof createBrandFormSchema>>

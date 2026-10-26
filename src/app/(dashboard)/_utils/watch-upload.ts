@@ -1,4 +1,4 @@
-import { createWatchImageUpload } from "../actions/watches"
+import { createWatchImageUpload } from "../actions/watch-images"
 import { putWithProgress } from "@/lib/upload-client"
 
 export async function uploadWatchImage(

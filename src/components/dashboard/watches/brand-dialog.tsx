@@ -10,7 +10,7 @@ import {
   brandLogoFileSchema,
   createBrandFormSchema,
   type BrandFormInput,
-} from "@/app/(dashboard)/_utils/watch-schema"
+} from "@/app/(dashboard)/_utils/brand-schema"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,

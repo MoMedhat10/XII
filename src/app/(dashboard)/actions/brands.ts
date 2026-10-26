@@ -5,8 +5,8 @@ import { Prisma } from "@/app/generated/prisma/client"
 import prisma from "../../../../lib/prisma"
 import { logger } from "../../../../lib/pino"
 import { createPresignedPut, deleteObjects, moveObject } from "../../../../lib/storage"
-import { requireAdmin } from "../_utils/require-admin"
-import { verifyUploadedImage } from "../_utils/verify-upload"
+import { requireAdmin } from "../_server/require-admin"
+import { verifyUploadedImage } from "../_server/verify-upload"
 import { BRAND_LOGO_EXT, BRAND_LOGO_TYPES, MAX_BRAND_LOGO_BYTES } from "../_utils/upload-rules"
 import {
   createBrandSchema, logoUploadSchema, updateBrandSchema,
