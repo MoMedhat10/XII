@@ -2,6 +2,7 @@ import "server-only"
 import type { Prisma } from "@/app/generated/prisma/client"
 import prisma from "../../../../lib/prisma"
 import { getPublicUrl } from "../../../../lib/storage"
+import { requireAdmin } from "../_utils/require-admin"
 import { WATCHES_PAGE_SIZE, type WatchFilters } from "../_utils/watch-schema"
 import type { AdminWatch, AdminWatchImage, AdminWatchPage } from "./types"
 
@@ -71,6 +72,9 @@ function filtersWhere({
 export async function getAdminWatchPage(
   filters: WatchFilters
 ): Promise<AdminWatchPage> {
+  // checked here, not only in the layout: layouts don't re-run on client
+  // navigation (Next docs, "Layouts and auth checks")
+  await requireAdmin()
   const where = filtersWhere(filters)
   const pageSize = WATCHES_PAGE_SIZE
 
@@ -103,6 +107,7 @@ export async function getAdminWatchPage(
   })
 }
 
+/** No auth check of its own: only called by actions that ran requireAdmin. */
 export async function getAdminWatchImages(watchId: string) {
   const rows = await prisma.watchImage.findMany({
     where: { watchId },
