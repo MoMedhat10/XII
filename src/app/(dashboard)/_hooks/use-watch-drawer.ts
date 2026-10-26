@@ -1,9 +1,9 @@
 "use client"
 
-import { startTransition, useState, useTransition } from "react"
+import { startTransition, useActionState, useState } from "react"
 import { toast } from "sonner"
 
-import type { DeleteTarget, WatchDrawerState } from "./types"
+import type { DeleteTarget, FormResult, WatchDrawerState } from "./types"
 
 import type { AdminWatch } from "../_data/types"
 import {
@@ -19,22 +19,41 @@ import {
 } from "../actions/watches"
 import type { WatchList } from "./use-watch-list"
 
+type SavePayload = {
+  values: WatchFormInput
+  state: WatchDrawerState
+  openId: number
+}
+
 export function useWatchDrawer({ list }: { list: WatchList }) {
   // Keeps its last subject while closing, so the exit animation never
   // renders empty content.
+  // `openId` tells this opening's server errors apart from an earlier one's
   const [drawer, setDrawer] = useState<{
     open: boolean
     state: WatchDrawerState
-  }>({ open: false, state: { mode: "create", brandId: "" } })
-  // pending until the action *and* its refresh are done, so the drawer
-  // can't be submitted twice or closed before the list shows the result
-  const [saving, startSaving] = useTransition()
+    openId: number
+  }>({ open: false, state: { mode: "create", brandId: "" }, openId: 0 })
+
+  // `saving` stays true until the action *and* its refresh are done, so the
+  // drawer can't be submitted twice or closed before the list updates
+  const [saveResult, dispatchSave, saving] = useActionState(saveWatch, {
+    openId: -1,
+  })
 
   const openNew = (brandId: string) =>
-    setDrawer({ open: true, state: { mode: "create", brandId } })
+    setDrawer((d) => ({
+      open: true,
+      state: { mode: "create", brandId },
+      openId: d.openId + 1,
+    }))
 
   const openEdit = (watch: AdminWatch) =>
-    setDrawer({ open: true, state: { mode: "edit", watch } })
+    setDrawer((d) => ({
+      open: true,
+      state: { mode: "edit", watch },
+      openId: d.openId + 1,
+    }))
 
   const close = () => setDrawer((d) => ({ ...d, open: false }))
 
@@ -42,33 +61,45 @@ export function useWatchDrawer({ list }: { list: WatchList }) {
     if (!saving) setDrawer((d) => ({ ...d, open }))
   }
 
-  /** Resolves when saved; rejects to keep the drawer open (it toasts). */
-  const save = (values: WatchFormInput) =>
-    new Promise<void>((resolve, reject) => {
-      const { state } = drawer
-      startSaving(async () => {
-        try {
-          // new watches are always drafts; the refresh shows them when
-          // they match the filters
-          const res =
-            state.mode === "edit"
-              ? await updateWatch({
-                  ...values,
-                  id: state.watch.id,
-                  // the fields as the drawer opened them, so concurrent edits are caught
-                  original: pick(state.watch, EDITABLE_WATCH_FIELDS),
-                })
-              : await createWatch(values)
-          if (!res.success) throw new Error(res.message)
-          // closes in the same commit as the refreshed list
-          startSaving(close)
-          toast.success(`${res.message} · ${res.data.name}`)
-          resolve()
-        } catch (error) {
-          reject(error)
+  async function saveWatch(
+    _prev: FormResult,
+    { values, state, openId }: SavePayload
+  ): Promise<FormResult> {
+    try {
+      // new watches are always drafts; the refresh shows them when they
+      // match the filters
+      const res =
+        state.mode === "edit"
+          ? await updateWatch({
+              ...values,
+              id: state.watch.id,
+              // the fields as the drawer opened them, so concurrent edits are caught
+              original: pick(state.watch, EDITABLE_WATCH_FIELDS),
+            })
+          : await createWatch(values)
+      if (!res.success) {
+        return {
+          openId,
+          error: { message: res.message, fieldErrors: res.fieldErrors },
         }
-      })
-    })
+      }
+      // closes in the same commit as the refreshed list
+      startTransition(close)
+      toast.success(`${res.message} · ${res.data.name}`)
+      return { openId }
+    } catch (error) {
+      return { openId, error: { message: errorMessage(error, "Save failed.") } }
+    }
+  }
+
+  const save = (values: WatchFormInput) =>
+    startTransition(() =>
+      dispatchSave({ values, state: drawer.state, openId: drawer.openId })
+    )
+
+  /** Only errors from this opening of the drawer. */
+  const serverError =
+    saveResult.openId === drawer.openId ? saveResult.error : undefined
 
   const toggleLive = (watch: AdminWatch) => {
     const next = !watch.isActive
@@ -106,6 +137,7 @@ export function useWatchDrawer({ list }: { list: WatchList }) {
   return {
     drawer,
     saving,
+    serverError,
     openNew,
     openEdit,
     onOpenChange,

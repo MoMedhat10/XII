@@ -33,7 +33,7 @@ export function WatchesManager({
   const list = useWatchList({ data, brands: serverBrands })
   const filters = useWatchFilters({ serverFilters })
   const watch = useWatchDrawer({ list })
- 
+
   const { setFileInput, ...images } = useWatchImages({ list })
   const brands = useBrands({ filters })
   const confirm = useDeleteConfirm({
@@ -123,6 +123,7 @@ export function WatchesManager({
         state={watch.drawer.state}
         brands={list.brands}
         saving={watch.saving}
+        serverError={watch.serverError}
         onOpenChange={watch.onOpenChange}
         onSubmit={watch.save}
         onCreateBrand={(select) => brands.openNew(select)}
@@ -150,6 +151,7 @@ export function WatchesManager({
         state={brands.dialog.state}
         brands={list.brands}
         saving={brands.saving}
+        serverError={brands.serverError}
         onOpenChange={brands.onDialogOpenChange}
         onSubmit={brands.save}
       />

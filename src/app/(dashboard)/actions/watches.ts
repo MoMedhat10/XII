@@ -12,7 +12,7 @@ import {
   lockWatch,
   removeObjects,
 } from "../_server/watch-tx"
-import { fail, type ActionRes } from "../_utils/action-result"
+import { fail, parseFail, type ActionRes } from "../_utils/action-result"
 import {
   createWatchSchema,
   EDITABLE_WATCH_FIELDS,
@@ -33,7 +33,7 @@ export async function createWatch(
 ): Promise<ActionRes<AdminWatch>> {
   await requireAdmin()
   const parsed = createWatchSchema.safeParse(input)
-  if (!parsed.success) return fail(parsed.error.issues[0].message)
+  if (!parsed.success) return parseFail(parsed.error)
   const { price, ...fields } = parsed.data
 
   try {
@@ -64,7 +64,7 @@ export async function updateWatch(
 ): Promise<ActionRes<AdminWatch>> {
   await requireAdmin()
   const parsed = updateWatchSchema.safeParse(input)
-  if (!parsed.success) return fail(parsed.error.issues[0].message)
+  if (!parsed.success) return parseFail(parsed.error)
   const { id, original, price, ...fields } = parsed.data
 
   try {

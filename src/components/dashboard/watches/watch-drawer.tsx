@@ -1,6 +1,6 @@
 "use client"
 
-import { useId } from "react"
+import { useEffect, useId } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Controller, useForm, useWatch } from "react-hook-form"
 import { toast } from "sonner"
@@ -36,7 +36,19 @@ import {
   textLink,
 } from "./watch-utils"
 import { MAX_STOCK } from "@/app/(dashboard)/_utils/upload-rules"
-import type { WatchDrawerState } from "@/app/(dashboard)/_hooks/types"
+import type {
+  ServerError,
+  WatchDrawerState,
+} from "@/app/(dashboard)/_hooks/types"
+
+const FORM_FIELDS: Record<keyof WatchFormInput, true> = {
+  name: true,
+  model: true,
+  brandId: true,
+  price: true,
+  stock: true,
+  description: true,
+}
 
 function toDefaults(state: WatchDrawerState): WatchFormInput {
   if (state.mode === "create") {
@@ -65,6 +77,7 @@ export function WatchDrawer({
   state,
   brands,
   saving,
+  serverError,
   onOpenChange,
   onSubmit,
   onCreateBrand,
@@ -74,9 +87,9 @@ export function WatchDrawer({
   state: WatchDrawerState
   brands: AdminBrand[]
   saving: boolean
+  serverError?: ServerError
   onOpenChange: (open: boolean) => void
-  /** Resolves when saved; throws to keep the drawer open. */
-  onSubmit: (values: WatchFormInput) => Promise<void>
+  onSubmit: (values: WatchFormInput) => void
   onCreateBrand: (select: (brand: AdminBrand) => void) => void
   onDelete: (watch: AdminWatch) => void
 }) {
@@ -95,6 +108,7 @@ export function WatchDrawer({
           state={state}
           brands={brands}
           saving={saving}
+          serverError={serverError}
           onSubmit={onSubmit}
           onClose={() => onOpenChange(false)}
           onCreateBrand={onCreateBrand}
@@ -109,6 +123,7 @@ function WatchForm({
   state,
   brands,
   saving,
+  serverError,
   onSubmit,
   onClose,
   onCreateBrand,
@@ -117,7 +132,8 @@ function WatchForm({
   state: WatchDrawerState
   brands: AdminBrand[]
   saving: boolean
-  onSubmit: (values: WatchFormInput) => Promise<void>
+  serverError?: ServerError
+  onSubmit: (values: WatchFormInput) => void
   onClose: () => void
   onCreateBrand: (select: (brand: AdminBrand) => void) => void
   onDelete: (watch: AdminWatch) => void
@@ -131,7 +147,8 @@ function WatchForm({
     control,
     handleSubmit,
     setValue,
-    formState: { errors, isSubmitting, isDirty },
+    setError,
+    formState: { errors, isDirty },
   } = useForm<WatchFormInput>({
     resolver: zodResolver(watchFormSchema),
     defaultValues: toDefaults(state),
@@ -139,16 +156,27 @@ function WatchForm({
 
   const name = useWatch({ control, name: "name" })
   const model = useWatch({ control, name: "model" })
-  const busy = isSubmitting || saving
+  const busy = saving
 
-  const submit = async (values: WatchFormInput) => {
+  const submit = (values: WatchFormInput) => {
     if (editing && !isDirty) return onClose()
-    try {
-      await onSubmit(values)
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Save failed.")
-    }
+    onSubmit(values)
   }
+
+  // Server validation errors go under their field; anything else is a toast.
+  useEffect(() => {
+    if (!serverError) return
+    let shown = false
+    for (const [field, message] of Object.entries(
+      serverError.fieldErrors ?? {}
+    )) {
+      if (message && field in FORM_FIELDS) {
+        setError(field as keyof WatchFormInput, { type: "server", message })
+        shown = true
+      }
+    }
+    if (!shown) toast.error(serverError.message)
+  }, [serverError, setError])
 
   const a11y = (field: keyof WatchFormInput) => ({
     "aria-invalid": errors[field] ? true : undefined,

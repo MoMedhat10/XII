@@ -1,6 +1,6 @@
 "use client"
 
-import { useId, useMemo, useRef } from "react"
+import { useEffect, useId, useMemo, useRef } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Controller, useForm } from "react-hook-form"
 import { toast } from "sonner"
@@ -36,13 +36,17 @@ import {
   portalTheme,
 } from "./watch-utils"
 import { BRAND_LOGO_TYPES } from "@/app/(dashboard)/_utils/upload-rules"
-import type { BrandDialogState } from "@/app/(dashboard)/_hooks/types"
+import type {
+  BrandDialogState,
+  ServerError,
+} from "@/app/(dashboard)/_hooks/types"
 
 export function BrandDialog({
   open,
   state,
   brands,
   saving,
+  serverError,
   onOpenChange,
   onSubmit,
 }: {
@@ -50,8 +54,9 @@ export function BrandDialog({
   state: BrandDialogState
   brands: AdminBrand[]
   saving: boolean
+  serverError?: ServerError
   onOpenChange: (open: boolean) => void
-  onSubmit: (values: BrandFormInput) => Promise<void>
+  onSubmit: (values: BrandFormInput) => void
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -66,6 +71,7 @@ export function BrandDialog({
           state={state}
           brands={brands}
           saving={saving}
+          serverError={serverError}
           onSubmit={onSubmit}
         />
       </DialogContent>
@@ -77,12 +83,14 @@ function BrandForm({
   state,
   brands,
   saving,
+  serverError,
   onSubmit,
 }: {
   state: BrandDialogState
   brands: AdminBrand[]
   saving: boolean
-  onSubmit: (values: BrandFormInput) => Promise<void>
+  serverError?: ServerError
+  onSubmit: (values: BrandFormInput) => void
 }) {
   const uid = useId()
   const logoInput = useRef<HTMLInputElement>(null)
@@ -98,7 +106,8 @@ function BrandForm({
     control,
     handleSubmit,
     setValue,
-    formState: { errors, isSubmitting },
+    setError,
+    formState: { errors },
   } = useForm<BrandFormInput>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -113,19 +122,29 @@ function BrandForm({
     if (url?.startsWith("blob:")) URL.revokeObjectURL(url)
   }
 
-  const busy = isSubmitting || saving
+  const busy = saving
 
-  const submit = async (values: BrandFormInput) => {
-    try {
-      await onSubmit(values)
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Save failed.")
+  // Server validation errors go under their field; anything else is a toast.
+  useEffect(() => {
+    if (!serverError) return
+    let shown = false
+    for (const [field, message] of Object.entries(
+      serverError.fieldErrors ?? {}
+    )) {
+      if (
+        message &&
+        (field === "name" || field === "description" || field === "logoUrl")
+      ) {
+        setError(field, { type: "server", message })
+        shown = true
+      }
     }
-  }
+    if (!shown) toast.error(serverError.message)
+  }, [serverError, setError])
 
   return (
     <form
-      onSubmit={handleSubmit(submit)}
+      onSubmit={handleSubmit(onSubmit)}
       noValidate
       aria-busy={busy}
       className="flex flex-col gap-5"

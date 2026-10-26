@@ -25,7 +25,7 @@ import {
 } from "../_utils/brand-schema"
 import { brandSelect, toAdminBrand } from "../_data/brands"
 import type { AdminBrand } from "../_data/types"
-import { fail, type ActionRes } from "../_utils/action-result"
+import { fail, parseFail, type ActionRes } from "../_utils/action-result"
 
 async function promoteLogo(tmpKey: string) {
   const ok = await verifyUploadedImage(tmpKey, {
@@ -78,7 +78,7 @@ export async function createBrand(
 ): Promise<ActionRes<AdminBrand>> {
   await requireAdmin()
   const parsed = createBrandSchema.safeParse(input)
-  if (!parsed.success) return fail(parsed.error.issues[0].message)
+  if (!parsed.success) return parseFail(parsed.error)
   const { name, description, logoKey: tmpKey } = parsed.data
 
   const logoKey = await promoteLogo(tmpKey)
@@ -107,7 +107,7 @@ export async function updateBrand(
 ): Promise<ActionRes<AdminBrand>> {
   await requireAdmin()
   const parsed = updateBrandSchema.safeParse(input)
-  if (!parsed.success) return fail(parsed.error.issues[0].message)
+  if (!parsed.success) return parseFail(parsed.error)
   const { id, name, description, logo } = parsed.data
 
   const current = await prisma.brand.findUnique({
