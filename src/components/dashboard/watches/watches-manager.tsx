@@ -35,7 +35,7 @@ export function WatchesManager({
   const watch = useWatchDrawer({ list })
  
   const { setFileInput, ...images } = useWatchImages({ list })
-  const brands = useBrands({ list, filters })
+  const brands = useBrands({ filters })
   const confirm = useDeleteConfirm({
     run: { watch: watch.remove, brand: brands.remove, image: images.remove },
   })

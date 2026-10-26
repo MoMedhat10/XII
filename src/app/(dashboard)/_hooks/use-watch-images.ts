@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { startTransition, useState } from "react"
 import { toast } from "sonner"
 
 import type { DeleteTarget } from "@/components/dashboard/watches/confirm-delete-dialog"
@@ -56,7 +56,7 @@ export function useWatchImages({ list }: { list: WatchList }) {
       drafts.push({
         file,
         image: {
-          id: `upload-${crypto.randomUUID()}`, // replaced by the server's id
+          id: `upload-${crypto.randomUUID()}`,
           url: URL.createObjectURL(file),
           alt: `${watch.name}, view ${watch.images.length + drafts.length + 1}`,
           progress: 0,
@@ -65,87 +65,75 @@ export function useWatchImages({ list }: { list: WatchList }) {
     }
     if (!drafts.length) return
 
-    const draftIds = new Set(drafts.map((d) => d.image.id))
-    const setProgress = (imageId: string, pct: number) =>
-      list.patchWatch(watchId, (w) => ({
-        ...w,
-        images: w.images.map((image) =>
-          // held at 99 until the server has saved it
-          image.id === imageId
-            ? { ...image, progress: Math.min(pct, 99) }
-            : image
-        ),
-      }))
-    const dropDrafts = () =>
-      list.patchWatch(watchId, (w) => ({
-        ...w,
-        images: w.images.filter((image) => !draftIds.has(image.id)),
-      }))
+    const tileIds = new Set(drafts.map((d) => d.image.id))
+    const finish = () => {
+      list.dropUploads(watchId, tileIds)
+      list.setImageBusy(watchId, false)
+      drafts.forEach((d) => URL.revokeObjectURL(d.image.url))
+    }
 
-    list.patchWatch(watchId, (w) => ({
-      ...w,
-      images: [...w.images, ...drafts.map((d) => d.image)],
-    }))
+    list.addUploads(
+      watchId,
+      drafts.map((d) => d.image)
+    )
     list.setImageBusy(watchId, true)
 
-    try {
-      const results = await Promise.allSettled(
-        drafts.map((d) =>
-          uploadWatchImage(d.file, (pct) => setProgress(d.image.id, pct))
+    const results = await Promise.allSettled(
+      drafts.map((d) =>
+        uploadWatchImage(d.file, (pct) =>
+          // held at 99 until the server has saved it
+          list.setUploadProgress(watchId, d.image.id, Math.min(pct, 99))
         )
       )
-      const imageKeys: string[] = []
-      results.forEach((result, i) => {
-        if (result.status === "fulfilled") imageKeys.push(result.value)
-        else
-          toast.error(
-            `${drafts[i].file.name}: ${errorMessage(result.reason, "Upload failed.")}`
-          )
-      })
-      if (!imageKeys.length) {
-        dropDrafts()
-        return
-      }
+    )
+    const imageKeys: string[] = []
+    results.forEach((result, i) => {
+      if (result.status === "fulfilled") imageKeys.push(result.value)
+      else
+        toast.error(
+          `${drafts[i].file.name}: ${errorMessage(result.reason, "Upload failed.")}`
+        )
+    })
+    if (!imageKeys.length) return finish()
 
-      const res = await addWatchImages({ watchId, imageKeys })
-      if (!res.success) throw new Error(res.message)
-      list.patchWatch(watchId, (w) => ({ ...w, images: res.data }))
-      toast.success(`${res.message} · ${watch.name}`)
-    } catch (error) {
-      dropDrafts()
-      toast.error(errorMessage(error, "Couldn't add the images."))
-    } finally {
-      drafts.forEach((d) => URL.revokeObjectURL(d.image.url))
-      list.setImageBusy(watchId, false)
-    }
+    startTransition(async () => {
+      try {
+        const res = await addWatchImages({ watchId, imageKeys })
+        if (!res.success) throw new Error(res.message)
+        toast.success(`${res.message} · ${watch.name}`)
+      } catch (error) {
+        toast.error(errorMessage(error, "Couldn't add the images."))
+      }
+      // the tiles leave in the same commit as the refreshed row's images
+      startTransition(finish)
+    })
   }
 
   const onFilesPicked = (files: FileList | null) => {
     if (uploadTarget) upload(uploadTarget, files)
   }
 
-  const setCover = async (watch: AdminWatch, imageId: string) => {
-    const previous = watch.images
-    const image = previous.find((i) => i.id === imageId)
+  const setCover = (watch: AdminWatch, imageId: string) => {
+    const image = watch.images.find((i) => i.id === imageId)
     if (!image || list.imageBusyIds.has(watch.id)) return
-    const next = [image, ...previous.filter((i) => i.id !== imageId)]
+    const order = [image, ...watch.images.filter((i) => i !== image)]
 
-    list.patchWatch(watch.id, (w) => ({ ...w, images: next }))
     list.setImageBusy(watch.id, true)
-    try {
-      const res = await reorderWatchImages({
-        watchId: watch.id,
-        imageIds: next.map((i) => i.id),
-      })
-      if (!res.success) throw new Error(res.message)
-      list.patchWatch(watch.id, (w) => ({ ...w, images: res.data }))
-      toast.success(`${res.message} · ${watch.name}`)
-    } catch (error) {
-      list.patchWatch(watch.id, (w) => ({ ...w, images: previous }))
-      toast.error(errorMessage(error, "Couldn't change the cover."))
-    } finally {
-      list.setImageBusy(watch.id, false)
-    }
+    startTransition(async () => {
+      list.applyOptimistic({ type: "cover", id: watch.id, imageId })
+      try {
+        const res = await reorderWatchImages({
+          watchId: watch.id,
+          imageIds: order.map((i) => i.id),
+        })
+        if (!res.success) throw new Error(res.message)
+        toast.success(`${res.message} · ${watch.name}`)
+      } catch (error) {
+        // no manual undo: the optimistic order drops when this ends
+        toast.error(errorMessage(error, "Couldn't change the cover."))
+      }
+      startTransition(() => list.setImageBusy(watch.id, false))
+    })
   }
 
   const deleteTarget = (
@@ -167,13 +155,10 @@ export function useWatchImages({ list }: { list: WatchList }) {
 
   /** Run by the delete confirmation. The last image of a live watch also unpublishes it (server decides). */
   const remove = async (target: ImageTarget) => {
+    // the refresh brings the row without the image (and unpublished if it
+    // was the last one)
     const res = await deleteWatchImage({ id: target.id })
     if (!res.success) throw new Error(res.message)
-    list.patchWatch(target.watchId, (w) => ({
-      ...w,
-      isActive: res.data.isActive,
-      images: w.images.filter((i) => i.id !== target.id),
-    }))
     return `${res.message} · ${target.name}`
   }
 

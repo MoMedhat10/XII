@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useRef, useState, useTransition } from "react"
 import { toast } from "sonner"
 
 import type { BrandDialogState } from "@/components/dashboard/watches/brand-dialog"
@@ -11,21 +11,15 @@ import { uploadBrandLogo } from "../_utils/brand-upload"
 import type { BrandFormInput } from "../_utils/watch-schema"
 import { createBrand, deleteBrand, updateBrand } from "../actions/brands"
 import type { WatchFiltersApi } from "./use-watch-filters"
-import type { WatchList } from "./use-watch-list"
 
-export function useBrands({
-  list,
-  filters,
-}: {
-  list: WatchList
-  filters: WatchFiltersApi
-}) {
+export function useBrands({ filters }: { filters: WatchFiltersApi }) {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [dialog, setDialog] = useState<{
     open: boolean
     state: BrandDialogState
   }>({ open: false, state: { brand: null, fromWatch: false } })
-  const [saving, setSaving] = useState(false)
+  // pending until the action and its refresh are done
+  const [saving, startSaving] = useTransition()
   const [freshId, setFreshId] = useState<string | null>(null)
   /** set when the dialog was opened from the watch drawer: selects the new brand there */
   const selectInWatchDrawer = useRef<((brand: AdminBrand) => void) | null>(null)
@@ -46,54 +40,56 @@ export function useBrands({
     setDialog((d) => ({ ...d, open }))
   }
 
-  const save = async (values: BrandFormInput) => {
-    const { brand: existing, fromWatch } = dialog.state
-    setSaving(true)
-    try {
-      if (!existing && !values.logoFile) throw new Error("Logo is required.")
-      const newKey = values.logoFile
-        ? await uploadBrandLogo(values.logoFile)
-        : null
+  /** Resolves when saved; rejects to keep the dialog open (it toasts). */
+  const save = (values: BrandFormInput) =>
+    new Promise<void>((resolve, reject) => {
+      const { brand: existing, fromWatch } = dialog.state
+      startSaving(async () => {
+        try {
+          if (!existing && !values.logoFile)
+            throw new Error("Logo is required.")
+          const newKey = values.logoFile
+            ? await uploadBrandLogo(values.logoFile)
+            : null
 
-      const res = existing
-        ? await updateBrand({
-            id: existing.id,
-            name: values.name,
-            description: values.description,
-            logo: newKey
-              ? { action: "replace", key: newKey }
-              : { action: "keep" },
+          const res = existing
+            ? await updateBrand({
+                id: existing.id,
+                name: values.name,
+                description: values.description,
+                logo: newKey
+                  ? { action: "replace", key: newKey }
+                  : { action: "keep" },
+              })
+            : await createBrand({
+                name: values.name,
+                description: values.description,
+                logoKey: newKey!,
+              })
+          if (!res.success) throw new Error(res.message)
+          const saved = res.data
+
+          // the brand list itself comes back with the action's refresh;
+          // these land in the same commit
+          startSaving(() => {
+            if (!existing) {
+              setFreshId(saved.id)
+              if (fromWatch) selectInWatchDrawer.current?.(saved)
+            }
+            selectInWatchDrawer.current = null
+            setDialog((d) => ({ ...d, open: false }))
           })
-        : await createBrand({
-            name: values.name,
-            description: values.description,
-            logoKey: newKey!,
-          })
-
-      if (!res.success) throw new Error(res.message)
-      const saved = res.data
-
-      list.setBrands((brands) =>
-        existing
-          ? brands.map((b) => (b.id === saved.id ? saved : b))
-          : [saved, ...brands]
-      )
-      if (!existing) {
-        setFreshId(saved.id)
-        if (fromWatch) selectInWatchDrawer.current?.(saved)
-      }
-      selectInWatchDrawer.current = null
-      setDialog((d) => ({ ...d, open: false }))
-      toast.success(`${res.message} · ${saved.name}`)
-    } finally {
-      setSaving(false)
-    }
-  }
+          toast.success(`${res.message} · ${saved.name}`)
+          resolve()
+        } catch (error) {
+          reject(error)
+        }
+      })
+    })
 
   const remove = async (target: Extract<DeleteTarget, { kind: "brand" }>) => {
     const res = await deleteBrand(target.id)
     if (!res.success) throw new Error(res.message)
-    list.setBrands((brands) => brands.filter((b) => b.id !== target.id))
     if (filters.filters.brand === target.id) {
       filters.updateFilters({ brand: "" })
     }

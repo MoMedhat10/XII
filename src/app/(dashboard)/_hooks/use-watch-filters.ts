@@ -1,6 +1,12 @@
 "use client"
 
-import { useEffect, useRef, useState, useTransition } from "react"
+import {
+  useEffect,
+  useOptimistic,
+  useRef,
+  useState,
+  useTransition,
+} from "react"
 import { usePathname, useRouter } from "next/navigation"
 
 import type { WatchFilters } from "../_utils/watch-schema"
@@ -23,18 +29,20 @@ export function useWatchFilters({
   const pathname = usePathname()
   const [navigating, startNavigation] = useTransition()
 
-  /** Filters last sent to the server (or received back from it). */
-  const [filters, setFilters] = useState(serverFilters)
+  // The server's filters, with the one being loaded shown on top until the
+  // new page arrives (React drops it when the navigation ends).
+  const [filters, setOptimisticFilters] = useOptimistic(serverFilters)
   /** The search box text; reaches `filters.q` after a pause in typing. */
   const [search, setSearch] = useState(serverFilters.q)
+  /** the q this tab last sent, to tell typing apart from back/forward */
+  const [sentQ, setSentQ] = useState(serverFilters.q)
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
 
-  const [synced, setSynced] = useState(serverFilters)
-  if (synced !== serverFilters) {
-    // only touch the search box when the change didn't come from typing in it
-    if (serverFilters.q !== filters.q) setSearch(serverFilters.q)
-    setFilters(serverFilters)
-    setSynced(serverFilters)
+  // the search box is real UI state, so it only follows the URL when q
+  // changed somewhere else (back/forward), never while typing
+  if (serverFilters.q !== sentQ) {
+    setSentQ(serverFilters.q)
+    setSearch(serverFilters.q)
   }
 
   useEffect(() => () => clearTimeout(searchTimer.current), [])
@@ -50,10 +58,11 @@ export function useWatchFilters({
 
   const navigate = (next: WatchFilters) => {
     clearTimeout(searchTimer.current) // a pending search must not fire later
-    setFilters(next)
-    startNavigation(() =>
+    setSentQ(next.q)
+    startNavigation(() => {
+      setOptimisticFilters(next)
       router.replace(hrefFor(pathname, next), { scroll: false })
-    )
+    })
   }
 
   /** Any filter change goes back to page 1 (and takes the typed search along). */

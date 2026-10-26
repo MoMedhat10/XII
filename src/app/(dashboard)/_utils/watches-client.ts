@@ -1,6 +1,5 @@
 import type { Dispatch, SetStateAction } from "react"
 
-import type { AdminWatch } from "../_data/types"
 import type { WatchFilters } from "./watch-schema"
 
 export const DEFAULT_FILTERS: WatchFilters = {
@@ -36,20 +35,3 @@ export const toggleId =
       else next.delete(id)
       return next
     })
-
-/**
- * Fresh server rows, except rows with an image upload/reorder in flight keep
- * their local images, so a refresh never wipes upload placeholders.
- */
-export function mergeServerWatches(
-  fresh: AdminWatch[],
-  local: AdminWatch[],
-  busyIds: ReadonlySet<string>
-) {
-  if (!busyIds.size) return fresh
-  return fresh.map((watch) => {
-    if (!busyIds.has(watch.id)) return watch
-    const mine = local.find((w) => w.id === watch.id)
-    return mine ? { ...watch, images: mine.images } : watch
-  })
-}

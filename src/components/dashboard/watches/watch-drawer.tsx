@@ -237,22 +237,35 @@ function WatchForm({
             <label htmlFor={id("brandId")} className={fieldLabel}>
               Brand
             </label>
-            <select
-              id={id("brandId")}
-              className={cn(
-                fieldControl,
-                "w-full cursor-pointer px-3 font-medium outline-none"
+            {/* Controlled on purpose: a brand created from here is selected
+                before its option arrives with the server refresh, and React
+                re-applies the value once the option exists. */}
+            <Controller
+              control={control}
+              name="brandId"
+              render={({ field }) => (
+                <select
+                  id={id("brandId")}
+                  name={field.name}
+                  ref={field.ref}
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  className={cn(
+                    fieldControl,
+                    "w-full cursor-pointer px-3 font-medium outline-none"
+                  )}
+                  {...a11y("brandId")}
+                >
+                  <option value="">Select brand</option>
+                  {brands.map((brand) => (
+                    <option key={brand.id} value={brand.id}>
+                      {brand.name}
+                    </option>
+                  ))}
+                </select>
               )}
-              {...a11y("brandId")}
-              {...register("brandId")}
-            >
-              <option value="">Select brand</option>
-              {brands.map((brand) => (
-                <option key={brand.id} value={brand.id}>
-                  {brand.name}
-                </option>
-              ))}
-            </select>
+            />
             <button
               type="button"
               onClick={() =>

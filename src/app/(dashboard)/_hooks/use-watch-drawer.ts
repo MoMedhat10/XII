@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { startTransition, useState, useTransition } from "react"
 import { toast } from "sonner"
 
 import type { DeleteTarget } from "@/components/dashboard/watches/confirm-delete-dialog"
@@ -24,7 +24,9 @@ export function useWatchDrawer({ list }: { list: WatchList }) {
     open: boolean
     state: WatchDrawerState
   }>({ open: false, state: { mode: "create", brandId: "" } })
-  const [saving, setSaving] = useState(false)
+  // pending until the action *and* its refresh are done, so the drawer
+  // can't be submitted twice or closed before the list shows the result
+  const [saving, startSaving] = useTransition()
 
   const openNew = (brandId: string) =>
     setDrawer({ open: true, state: { mode: "create", brandId } })
@@ -38,73 +40,63 @@ export function useWatchDrawer({ list }: { list: WatchList }) {
     if (!saving) setDrawer((d) => ({ ...d, open }))
   }
 
-  const createDraft = async (values: WatchFormInput) => {
-    // always created as a draft with no images; both are added from the row.
-    // The action's refresh shows it in the list when it matches the filters.
-    const res = await createWatch(values)
-    if (!res.success) throw new Error(res.message)
-    close()
-    toast.success(`${res.message} · ${res.data.name}`)
-  }
-
-  const editWatch = async (existing: AdminWatch, values: WatchFormInput) => {
-    const res = await updateWatch({
-      ...values,
-      id: existing.id,
-      // the version the drawer opened, so concurrent saves are caught
-      updatedAt: existing.updatedAt,
+  /** Resolves when saved; rejects to keep the drawer open (it toasts). */
+  const save = (values: WatchFormInput) =>
+    new Promise<void>((resolve, reject) => {
+      const { state } = drawer
+      startSaving(async () => {
+        try {
+          // new watches are always drafts; the refresh shows them when
+          // they match the filters
+          const res =
+            state.mode === "edit"
+              ? await updateWatch({
+                  ...values,
+                  id: state.watch.id,
+                  // the version the drawer opened, so concurrent saves are caught
+                  updatedAt: state.watch.updatedAt,
+                })
+              : await createWatch(values)
+          if (!res.success) throw new Error(res.message)
+          // closes in the same commit as the refreshed list
+          startSaving(close)
+          toast.success(`${res.message} · ${res.data.name}`)
+          resolve()
+        } catch (error) {
+          reject(error)
+        }
+      })
     })
-    if (!res.success) throw new Error(res.message)
-    const saved = res.data
-    list.patchWatch(existing.id, (w) => ({
-      ...saved,
-      // keep upload placeholders that started while the drawer was open
-      images: list.imageBusyIds.has(w.id) ? w.images : saved.images,
-    }))
-    close()
-    toast.success(`${res.message} · ${saved.name}`)
-  }
 
-  const save = async (values: WatchFormInput) => {
-    const { state } = drawer
-    setSaving(true)
-    try {
-      if (state.mode === "edit") await editWatch(state.watch, values)
-      else await createDraft(values)
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const toggleLive = async (watch: AdminWatch) => {
+  const toggleLive = (watch: AdminWatch) => {
     const next = !watch.isActive
-    list.patchWatch(watch.id, (w) => ({ ...w, isActive: next }))
     list.setPending(watch.id, true)
-    try {
-      // the server refuses to publish a watch without images
-      const res = await setWatchActive({ id: watch.id, isActive: next })
-      if (!res.success) throw new Error(res.message)
-      toast.success(`${res.message} · ${watch.name}`)
-    } catch (error) {
-      list.patchWatch(watch.id, (w) => ({ ...w, isActive: !next }))
-      toast.error(errorMessage(error, "Couldn't update the watch."))
-    } finally {
-      list.setPending(watch.id, false)
-    }
+    startTransition(async () => {
+      list.applyOptimistic({ type: "active", id: watch.id, isActive: next })
+      try {
+        // the server refuses to publish a watch without images
+        const res = await setWatchActive({ id: watch.id, isActive: next })
+        if (!res.success) throw new Error(res.message)
+        toast.success(`${res.message} · ${watch.name}`)
+      } catch (error) {
+        // no manual undo: the optimistic value drops when this ends
+        toast.error(errorMessage(error, "Couldn't update the watch."))
+      } finally {
+        startTransition(() => list.setPending(watch.id, false))
+      }
+    })
   }
 
-  /**
-   * Run by the delete confirmation. Also removes the watch's images; brand
-   * counts and the page refill come back with the action's refresh.
-   */
+  /** Run by the delete confirmation. The refresh removes the row. */
   const remove = async (target: Extract<DeleteTarget, { kind: "watch" }>) => {
     const res = await deleteWatch({ id: target.id })
     if (!res.success) throw new Error(res.message)
-    list.removeWatch(target.id)
-    setDrawer((d) =>
-      d.state.mode === "edit" && d.state.watch.id === target.id
-        ? { ...d, open: false }
-        : d
+    startTransition(() =>
+      setDrawer((d) =>
+        d.state.mode === "edit" && d.state.watch.id === target.id
+          ? { ...d, open: false }
+          : d
+      )
     )
     return `Deleted · ${target.name}`
   }

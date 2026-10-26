@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useTransition } from "react"
 import { toast } from "sonner"
 
 import type { DeleteTarget } from "@/components/dashboard/watches/confirm-delete-dialog"
@@ -19,7 +19,9 @@ export function useDeleteConfirm({ run }: { run: DeleteRunners }) {
     open: boolean
     target: DeleteTarget | null
   }>({ open: false, target: null })
-  const [deleting, setDeleting] = useState(false)
+  // pending until the delete and its refresh are done, so the dialog closes
+  // in the same commit that removes the item from the page
+  const [deleting, startDeleting] = useTransition()
 
   const ask = (target: DeleteTarget) => setConfirm({ open: true, target })
 
@@ -27,21 +29,20 @@ export function useDeleteConfirm({ run }: { run: DeleteRunners }) {
     if (!deleting) setConfirm((c) => ({ ...c, open }))
   }
 
-  const confirmDelete = async () => {
+  const confirmDelete = () => {
     const target = confirm.target
     if (!target) return
-    setDeleting(true)
-    try {
-      // TS can't pair run[kind] with the narrowed target on its own
-      const runner = run[target.kind] as (t: DeleteTarget) => Promise<string>
-      const message = await runner(target)
-      setConfirm((c) => ({ ...c, open: false }))
-      toast.success(message)
-    } catch (error) {
-      toast.error(errorMessage(error, "Delete failed."))
-    } finally {
-      setDeleting(false)
-    }
+    startDeleting(async () => {
+      try {
+        // TS can't pair run[kind] with the narrowed target on its own
+        const runner = run[target.kind] as (t: DeleteTarget) => Promise<string>
+        const message = await runner(target)
+        startDeleting(() => setConfirm((c) => ({ ...c, open: false })))
+        toast.success(message)
+      } catch (error) {
+        toast.error(errorMessage(error, "Delete failed."))
+      }
+    })
   }
 
   return {
