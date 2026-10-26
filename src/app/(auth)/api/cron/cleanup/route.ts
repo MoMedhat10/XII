@@ -1,27 +1,13 @@
 import { NextResponse } from "next/server";
 
+import { isCronAuthorized } from "../../../../../../lib/cron-auth";
 import { logger } from "../../../../../../lib/pino";
 import prisma from "../../../../../../lib/prisma";
 
 export async function GET(request: Request) {
     logger.info({ url: request.url }, "Verification code cleanup cron started");
 
-    const authHeader = request.headers.get("authorization");
-    const expectedToken = process.env.CRON_SECRET;
-
-    if (!authHeader || !expectedToken) {
-        return NextResponse.json(
-            {
-                success: false,
-                message: "Unauthorized",
-            },
-            { status: 401 }
-        );
-    }
-
-    const [scheme, token] = authHeader.split(" ");
-
-    if (scheme !== "Bearer" || token !== expectedToken) {
+    if (!isCronAuthorized(request)) {
         return NextResponse.json(
             {
                 success: false,

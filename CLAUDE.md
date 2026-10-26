@@ -56,7 +56,7 @@ How it works:
 - **Rate limiting**: `_utils/rateLimit.ts` runs an atomic fixed-window counter in Redis through a Lua script. Keys look like `register:user:<email>` and `otp:email-verification:<userId>`. There are two modes, and the choice is deliberate:
   - `rateLimitOrThrow` **fails closed**. It throws `ServiceUnavailableError` if Redis is down, and the action surfaces that error's message.
   - `rateLimit` wrapped in its own try/catch **fails open**. Login uses this so a Redis outage doesn't lock users out.
-- **Cron**: `(auth)/api/cron/cleanup/route.ts` deletes expired verification codes. Vercel calls it hourly (`vercel.json`), and it requires `Authorization: Bearer $CRON_SECRET`.
+- **Cron**: `(auth)/api/cron/cleanup/route.ts` deletes expired verification codes (hourly), and `(dashboard)/api/cron/storage-cleanup/route.ts` deletes `tmp/` uploads older than 24 h (daily). Both are scheduled in `vercel.json` and require `Authorization: Bearer $CRON_SECRET`, checked by `isCronAuthorized` in `lib/cron-auth.ts`.
 
 ## UI conventions
 - The UI uses shadcn/ui (style `radix-lyra`, built on the `radix-ui` package). Primitives are in `src/components/ui/`, and new ones are added via the shadcn CLI per `components.json`. Theming uses `next-themes`, and toasts use `sonner`.
