@@ -38,10 +38,20 @@ export const readFirstBytes = async (Key: string, n = 16) => {
   return Buffer.from(await res.Body!.transformToByteArray())
 }
 
+export const copyObject = (from: string, to: string) =>
+  s3.send(new CopyObjectCommand({ Bucket, CopySource: `${Bucket}/${from}`, Key: to }))
+
 export const moveObject = async (from: string, to: string) => {
-  await s3.send(new CopyObjectCommand({ Bucket, CopySource: `${Bucket}/${from}`, Key: to }))
+  await copyObject(from, to)
   await s3.send(new DeleteObjectCommand({ Bucket, Key: from }))
 }
+
+// Key prefixes in the bucket:
+//   tmp/       unverified uploads; the storage-cleanup cron deletes them after 24 h
+//   brands/    brand logos, deleted with their brand
+//   watches/   watch images, deleted with their image row or watch
+//   orders/    copies of a watch's cover taken at checkout; never deleted by
+//              the app, so order history keeps its picture
 
 export const deleteObjects = (keys: string[]) =>
   keys.length

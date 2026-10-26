@@ -196,9 +196,16 @@ model OrderItem {
   watchId        String
   quantity       Int
   unitPriceCents Int
+  // Snapshot taken at checkout, so the order keeps what was bought even
+  // after the watch is renamed, re-branded or its images change.
+  watchName      String
+  watchModel     String
+  brandName      String
+  imageKey       String? // "orders/<uuid>.<ext>": a copy, never the watch's own image
   createdAt      DateTime @default(now())
 
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  // Restrict: a watch that was ordered can't be deleted (unpublish it instead)
   watch Watch @relation(fields: [watchId], references: [id])
 
   @@index([orderId])
