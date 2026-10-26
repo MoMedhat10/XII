@@ -57,11 +57,15 @@ function filtersWhere({
   brand,
   status,
 }: WatchFilters): Prisma.WatchWhereInput {
+  // Prisma passes `contains` straight into ILIKE without escaping, so a
+  // search for "%" or "_" would match every watch. Backslash is ILIKE's
+  // default escape character.
+  const term = q.replace(/[\\%_]/g, "\\$&")
   return {
-    ...(q && {
+    ...(term && {
       OR: [
-        { name: { contains: q, mode: "insensitive" } },
-        { model: { contains: q, mode: "insensitive" } },
+        { name: { contains: term, mode: "insensitive" } },
+        { model: { contains: term, mode: "insensitive" } },
       ],
     }),
     ...(brand && { brandId: brand }),
@@ -78,33 +82,33 @@ export async function getAdminWatchPage(
   const where = filtersWhere(filters)
   const pageSize = WATCHES_PAGE_SIZE
 
-  return prisma.$transaction(async (tx) => {
-    const [total, inventoryTotal] = await Promise.all([
-      tx.watch.count({ where }),
-      tx.watch.count(),
-    ])
-    const pageCount = Math.max(1, Math.ceil(total / pageSize))
-    // e.g. ?page=99, or the last row of the last page was just deleted
-    const page = Math.min(filters.page, pageCount)
+  // plain reads: a count that's briefly off by one for a single render is
+  // fine, and it doesn't hold a connection for an interactive transaction
+  const [total, inventoryTotal] = await Promise.all([
+    prisma.watch.count({ where }),
+    prisma.watch.count(),
+  ])
+  const pageCount = Math.max(1, Math.ceil(total / pageSize))
+  // e.g. ?page=99, or the last row of the last page was just deleted
+  const page = Math.min(filters.page, pageCount)
 
-    const rows = await tx.watch.findMany({
-      where,
-      select: watchSelect,
-      // id breaks ties so rows never jump between pages
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-    })
-
-    return {
-      watches: rows.map(toAdminWatch),
-      total,
-      inventoryTotal,
-      page,
-      pageCount,
-      pageSize,
-    }
+  const rows = await prisma.watch.findMany({
+    where,
+    select: watchSelect,
+    // id breaks ties so rows never jump between pages
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    skip: (page - 1) * pageSize,
+    take: pageSize,
   })
+
+  return {
+    watches: rows.map(toAdminWatch),
+    total,
+    inventoryTotal,
+    page,
+    pageCount,
+    pageSize,
+  }
 }
 
 /** No auth check of its own: only called by actions that ran requireAdmin. */

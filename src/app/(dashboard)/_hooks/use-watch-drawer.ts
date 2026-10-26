@@ -6,8 +6,11 @@ import { toast } from "sonner"
 import type { DeleteTarget, WatchDrawerState } from "./types"
 
 import type { AdminWatch } from "../_data/types"
-import type { WatchFormInput } from "../_utils/watch-schema"
-import { errorMessage } from "../_utils/watches-client"
+import {
+  EDITABLE_WATCH_FIELDS,
+  type WatchFormInput,
+} from "../_utils/watch-schema"
+import { errorMessage, pick } from "../_utils/watches-client"
 import {
   createWatch,
   deleteWatch,
@@ -52,8 +55,8 @@ export function useWatchDrawer({ list }: { list: WatchList }) {
               ? await updateWatch({
                   ...values,
                   id: state.watch.id,
-                  // the version the drawer opened, so concurrent saves are caught
-                  updatedAt: state.watch.updatedAt,
+                  // the fields as the drawer opened them, so concurrent edits are caught
+                  original: pick(state.watch, EDITABLE_WATCH_FIELDS),
                 })
               : await createWatch(values)
           if (!res.success) throw new Error(res.message)

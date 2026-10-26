@@ -35,3 +35,6 @@ export const toggleId =
       else next.delete(id)
       return next
     })
+
+export const pick = <T, K extends keyof T>(obj: T, keys: readonly K[]) =>
+  Object.fromEntries(keys.map((key) => [key, obj[key]])) as Pick<T, K>

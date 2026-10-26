@@ -15,6 +15,7 @@ import {
 import { fail, type ActionRes } from "../_utils/action-result"
 import {
   createWatchSchema,
+  EDITABLE_WATCH_FIELDS,
   deleteWatchSchema,
   parsePriceInput,
   setWatchActiveSchema,
@@ -64,16 +65,23 @@ export async function updateWatch(
   await requireAdmin()
   const parsed = updateWatchSchema.safeParse(input)
   if (!parsed.success) return fail(parsed.error.issues[0].message)
-  const { id, updatedAt, price, ...fields } = parsed.data
+  const { id, original, price, ...fields } = parsed.data
 
   try {
     const watch = await prisma.$transaction(async (tx) => {
       if (!(await lockWatch(tx, id))) throw new ActionError(WATCH_GONE)
       const current = await tx.watch.findUniqueOrThrow({
         where: { id },
-        select: { name: true, updatedAt: true },
+        select: {
+          name: true,
+          model: true,
+          brandId: true,
+          priceCents: true,
+          stock: true,
+          description: true,
+        },
       })
-      if (current.updatedAt.getTime() !== new Date(updatedAt).getTime()) {
+      if (EDITABLE_WATCH_FIELDS.some((f) => current[f] !== original[f])) {
         throw new ActionError(
           "Someone else changed this watch. Close and reopen it to see the latest."
         )

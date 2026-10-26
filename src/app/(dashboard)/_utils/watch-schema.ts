@@ -87,9 +87,29 @@ export const createWatchSchema = watchFormSchema.extend({
 export const updateWatchSchema = watchFormSchema.extend({
   id: z.uuid(),
   brandId: z.uuid("Pick a brand."),
-  /** the version the admin opened; a mismatch means someone else saved first */
-  updatedAt: z.iso.datetime(),
+  /**
+   * The drawer's fields as they were when it opened. If the row no longer
+   * matches, someone else edited them. Publishing and image changes don't
+   * touch these, so they never cause a false conflict.
+   */
+  original: z.object({
+    name: z.string(),
+    model: z.string(),
+    brandId: z.string(),
+    priceCents: z.number().int(),
+    stock: z.number().int(),
+    description: z.string(),
+  }),
 })
+
+export const EDITABLE_WATCH_FIELDS = [
+  "name",
+  "model",
+  "brandId",
+  "priceCents",
+  "stock",
+  "description",
+] as const
 
 export const setWatchActiveSchema = z.object({
   id: z.uuid(),

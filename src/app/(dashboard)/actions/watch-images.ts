@@ -37,7 +37,11 @@ export async function createWatchImageUpload(input: {
   if (!parsed.success) return fail(parsed.error.issues[0].message)
 
   const key = `tmp/watches/${crypto.randomUUID()}.${WATCH_IMAGE_EXT[parsed.data.contentType]}`
-  const url = await createPresignedPut(key, parsed.data.contentType)
+  const url = await createPresignedPut(
+    key,
+    parsed.data.contentType,
+    parsed.data.size
+  )
   return { success: true, message: "OK", data: { key, url } }
 }
 

@@ -19,11 +19,13 @@ export const s3 = new S3Client({
 
 export const getPublicUrl = (key: string) => `${process.env.S3_PUBLIC_URL}/${key}`
 
-export const createPresignedPut = (key: string, contentType: string) =>
+// contentLength is signed: storage rejects (403) a body of any other size,
+// so the size limit checked by the action can't be bypassed by the browser.
+export const createPresignedPut = (key: string, contentType: string, contentLength: number) =>
   getSignedUrl(
     s3,
     new PutObjectCommand({
-      Bucket, Key: key, ContentType: contentType,
+      Bucket, Key: key, ContentType: contentType, ContentLength: contentLength,
       CacheControl: "public, max-age=31536000, immutable",
     }),
     { expiresIn: 300 },
