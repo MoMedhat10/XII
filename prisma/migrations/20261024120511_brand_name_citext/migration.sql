@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Brand" ALTER COLUMN "name" SET DATA TYPE CITEXT;

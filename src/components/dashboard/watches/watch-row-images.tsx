@@ -2,7 +2,7 @@
 "use client"
 
 import type { AdminWatch } from "@/app/(dashboard)/_data/mock-watches"
-import { MAX_WATCH_IMAGES } from "@/app/(dashboard)/_utils/watch-schema"
+import { MAX_WATCH_IMAGES } from "@/app/(dashboard)/_utils/upload-rules"
 import { cn } from "@/lib/utils"
 
 /** Inline image strip: cover tag, upload progress, remove and add tiles. */

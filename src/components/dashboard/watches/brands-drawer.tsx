@@ -121,7 +121,7 @@ export function BrandsDrawer({
             </li>
           )}
           {brands.map((brand) => {
-            const count = watches.filter((w) => w.brandId === brand.id).length
+            const count = brand.watchCount;
             return (
               <li
                 key={brand.id}

@@ -7,7 +7,6 @@ import { toast } from "sonner"
 
 import type { AdminBrand } from "@/app/(dashboard)/_data/mock-watches"
 import {
-  BRAND_LOGO_TYPES,
   brandLogoFileSchema,
   createBrandFormSchema,
   type BrandFormInput,
@@ -36,6 +35,7 @@ import {
   fieldLabel,
   portalTheme,
 } from "./watch-utils"
+import { BRAND_LOGO_TYPES } from "@/app/(dashboard)/_utils/upload-rules"
 
 export type BrandDialogState = {
   brand: AdminBrand | null
@@ -103,6 +103,7 @@ function BrandForm({
     register,
     control,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<BrandFormInput>({
     resolver: zodResolver(schema),
@@ -110,8 +111,13 @@ function BrandForm({
       name: state.brand?.name ?? "",
       description: state.brand?.description ?? "",
       logoUrl: state.brand?.logoUrl ?? null,
+      logoFile: null,
     },
   })
+
+  const revokePreview = (url: string | null) => {
+    if (url?.startsWith("blob:")) URL.revokeObjectURL(url)
+  }
 
   const busy = isSubmitting || saving
 
@@ -158,13 +164,17 @@ function BrandForm({
         <Controller
           control={control}
           name="logoUrl"
-          render={({ field }) => (
+          render={({ field, fieldState }) => (
             <div className="flex items-center gap-[18px]">
               <button
                 type="button"
                 onClick={() => logoInput.current?.click()}
                 aria-label={field.value ? "Replace logo" : "Upload logo"}
-                className="circle flex size-24 shrink-0 items-center justify-center overflow-hidden border-[3px] border-dashed border-gold bg-[#141515] font-heading text-[11px] font-bold tracking-[1px] text-gold transition-colors hover:border-foreground hover:text-foreground"
+                aria-describedby={fieldState.error ? `${uid}-logo-error` : undefined}
+                className={cn(
+                  "circle flex size-24 shrink-0 items-center justify-center overflow-hidden border-[3px] border-dashed border-gold bg-[#141515] font-heading text-[11px] font-bold tracking-[1px] text-gold transition-colors hover:border-foreground hover:text-foreground",
+                  fieldState.error && "border-destructive text-destructive"
+                )}
               >
                 {field.value ? (
                   <BrandLogo
@@ -176,18 +186,14 @@ function BrandForm({
                 )}
               </button>
               <div className="flex flex-col gap-1">
-                <span className="text-[15px] font-semibold">Brand logo</span>
+                <span className="text-[15px] font-semibold">Brand logo *</span>
                 <span className="text-[13px] leading-[1.4] text-muted-foreground">
                   SVG or PNG on transparent. Shown on cards and filters.
                 </span>
-                {field.value && (
-                  <button
-                    type="button"
-                    onClick={() => field.onChange(null)}
-                    className="self-start font-sans text-[11px] font-bold tracking-[1.5px] text-gold uppercase"
-                  >
-                    Remove
-                  </button>
+                {fieldState.error && (
+                  <span id={`${uid}-logo-error`} role="alert" className={fieldError}>
+                    {fieldState.error.message}
+                  </span>
                 )}
               </div>
               <input
@@ -204,7 +210,10 @@ function BrandForm({
                     toast.error(result.error.issues[0]?.message)
                     return
                   }
-                  field.onChange(URL.createObjectURL(file))
+                  revokePreview(field.value)
+                  setValue("logoFile", file)
+                  // preview; also clears the "Logo is required." error
+                  setValue("logoUrl", URL.createObjectURL(file), { shouldValidate: true })
                 }}
               />
             </div>

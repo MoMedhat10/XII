@@ -5,8 +5,8 @@ export type AdminBrand = {
   id: string
   name: string
   description: string
-  /** Object URL or storage URL; null shows the initials. */
   logoUrl: string | null
+  watchCount: number
 }
 
 export type AdminWatchImage = {
@@ -54,30 +54,35 @@ export const MOCK_BRANDS: AdminBrand[] = [
     name: "XII Maison",
     description: "House movements, Geneva.",
     logoUrl: null,
+    watchCount:2
   },
   {
     id: "b2",
     name: "Atelier Nord",
     description: "Scandinavian tool watches.",
     logoUrl: null,
+    watchCount:4
   },
   {
     id: "b3",
     name: "Halden",
     description: "Minimal dress pieces.",
     logoUrl: null,
+    watchCount:2
   },
   {
     id: "b4",
     name: "Vauclair",
     description: "Independent complications.",
     logoUrl: null,
+    watchCount:11
   },
   {
     id: "b5",
     name: "Orsini",
     description: "Milanese design house.",
     logoUrl: null,
+    watchCount:3
   },
 ]
 

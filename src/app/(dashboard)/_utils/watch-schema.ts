@@ -1,22 +1,8 @@
 import { z } from "zod"
+import { BRAND_LOGO_TYPES, MAX_BRAND_LOGO_BYTES, MAX_PRICE_DOLLARS, MAX_STOCK, MAX_WATCH_IMAGE_BYTES, WATCH_IMAGE_TYPES } from "./upload-rules"
+import { brandFields } from "./brand-schema"
 
-export const WATCH_IMAGE_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/avif",
-] as const
-export const BRAND_LOGO_TYPES = [
-  "image/svg+xml",
-  "image/png",
-  "image/webp",
-  "image/jpeg",
-] as const
-export const MAX_WATCH_IMAGES = 8
-export const MAX_WATCH_IMAGE_BYTES = 5 * 1024 * 1024
-export const MAX_BRAND_LOGO_BYTES = 2 * 1024 * 1024
-export const MAX_PRICE_DOLLARS = 10_000_000
-export const MAX_STOCK = 9999
+
 
 // ---------------------------------------------------------------------------
 // Files (validated when picked, before they enter state)
@@ -26,7 +12,7 @@ export const watchImageFileSchema = z
   .instanceof(File, { message: "Select an image file" })
   .refine(
     (file) => (WATCH_IMAGE_TYPES as readonly string[]).includes(file.type),
-    "Use a JPEG, PNG, WebP or AVIF image"
+    "Use a JPEG, PNG, WebP image"
   )
   .refine(
     (file) => file.size <= MAX_WATCH_IMAGE_BYTES,
@@ -37,7 +23,7 @@ export const brandLogoFileSchema = z
   .instanceof(File, { message: "Select an image file" })
   .refine(
     (file) => (BRAND_LOGO_TYPES as readonly string[]).includes(file.type),
-    "Use an SVG, PNG, WebP or JPEG logo"
+    "Use a PNG, WebP or JPG logo"
   )
   .refine(
     (file) => file.size <= MAX_BRAND_LOGO_BYTES,
@@ -100,30 +86,20 @@ export type WatchFormInput = z.infer<typeof watchFormSchema>
 // Brand dialog form (names are unique, case-insensitively, like the DB)
 // ---------------------------------------------------------------------------
 
-export function createBrandFormSchema(
-  brands: { id: string; name: string }[],
-  editingId: string | null
-) {
+export function createBrandFormSchema(brands: { id: string; name: string }[], editingId: string | null) {
   return z.object({
-    name: z
+    name: brandFields.name.refine(
+      (name) => !brands.some((b) => b.id !== editingId && b.name.toLowerCase() === name.toLowerCase()),
+      { error: (issue) => `"${String(issue.input).trim()}" already exists.` },
+    ),
+    description: brandFields.description,
+    // null = no logo yet; an existing brand's URL or a blob: preview both count
+    logoUrl: z
       .string()
-      .trim()
-      .min(1, "Name is required.")
-      .max(60, "Name must not exceed 60 characters.")
-      .refine(
-        (name) =>
-          !brands.some(
-            (brand) =>
-              brand.id !== editingId &&
-              brand.name.toLowerCase() === name.toLowerCase()
-          ),
-        { error: (issue) => `"${String(issue.input).trim()}" already exists.` }
-      ),
-    description: z
-      .string()
-      .trim()
-      .max(500, "Description must not exceed 500 characters."),
-    logoUrl: z.string().nullable(),
+      .nullable()
+      // `!!url` (not `url !== null`) so TS doesn't infer a type guard and narrow the output type
+      .refine((url) => !!url, "Logo is required."),
+    logoFile: z.instanceof(File).nullable(),
   })
 }
 

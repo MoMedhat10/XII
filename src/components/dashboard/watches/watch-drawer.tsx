@@ -10,7 +10,6 @@ import type {
   AdminWatch,
 } from "@/app/(dashboard)/_data/mock-watches"
 import {
-  MAX_STOCK,
   formatPriceInput,
   watchFormSchema,
   type WatchFormInput,
@@ -39,6 +38,7 @@ import {
   portalTheme,
   textLink,
 } from "./watch-utils"
+import { MAX_STOCK } from "@/app/(dashboard)/_utils/upload-rules"
 
 export type WatchDrawerState =
   { mode: "create"; brandId: string } | { mode: "edit"; watch: AdminWatch }

@@ -10,8 +10,6 @@ import {
   type AdminWatchImage,
 } from "@/app/(dashboard)/_data/mock-watches"
 import {
-  MAX_WATCH_IMAGES,
-  WATCH_IMAGE_TYPES,
   parsePriceInput,
   watchImageFileSchema,
   type BrandFormInput,
@@ -29,6 +27,9 @@ import { WatchesPagination } from "./watches-pagination"
 import { WatchesEmpty, WatchesNoResults } from "./watches-states"
 import { WatchesTable, type WatchRowHandlers } from "./watches-table"
 import { WatchesToolbar } from "./watches-toolbar"
+import { MAX_WATCH_IMAGES, WATCH_IMAGE_TYPES } from "@/app/(dashboard)/_utils/upload-rules"
+import { uploadBrandLogo } from "@/app/(dashboard)/_utils/brand-upload"
+import { createBrand, deleteBrand, updateBrand } from "@/app/(dashboard)/actions/brands"
 
 const DEFAULT_FILTERS: WatchFilters = {
   q: "",
@@ -76,18 +77,21 @@ export function WatchesManager({
     open: boolean
     state: WatchDrawerState
   }>({ open: false, state: { mode: "create", brandId: "" } })
+
   const [savingWatch, setSavingWatch] = useState(false)
   const [brandsOpen, setBrandsOpen] = useState(false)
   const [brandDialog, setBrandDialog] = useState<{
     open: boolean
     state: BrandDialogState
   }>({ open: false, state: { brand: null, fromWatch: false } })
+
   const [savingBrand, setSavingBrand] = useState(false)
   const [freshBrandId, setFreshBrandId] = useState<string | null>(null)
   const [confirm, setConfirm] = useState<{
     open: boolean
     target: DeleteTarget | null
   }>({ open: false, target: null })
+  
   const [deleting, setDeleting] = useState(false)
 
   const selectBrandInDrawer = useRef<((brand: AdminBrand) => void) | null>(null)
@@ -275,33 +279,38 @@ export function WatchesManager({
     setBrandDialog({ open: true, state: { brand: null, fromWatch } })
 
   const saveBrand = async (values: BrandFormInput) => {
-    const { brand: existing, fromWatch } = brandDialog.state
-    const saved: AdminBrand = {
-      id: existing?.id ?? crypto.randomUUID(),
-      name: values.name,
-      description: values.description,
-      logoUrl: values.logoUrl,
-    }
+  const { brand: existing, fromWatch } = brandDialog.state
+  setSavingBrand(true)
+  try {
+    // 1. bytes → storage (only if a new file was picked)
+    if (!existing && !values.logoFile) throw new Error("Logo is required.")
+    const newKey = values.logoFile ? await uploadBrandLogo(values.logoFile) : null
 
-    setSavingBrand(true)
-    try {
-      await simulateRequest(null, { delay: 700 })
-      setBrands((list) =>
-        existing
-          ? list.map((b) => (b.id === saved.id ? saved : b))
-          : [saved, ...list]
-      )
-      if (!existing) {
-        setFreshBrandId(saved.id)
-        if (fromWatch) selectBrandInDrawer.current?.(saved)
-      }
-      selectBrandInDrawer.current = null
-      setBrandDialog((d) => ({ ...d, open: false }))
-      toast.success(`Brand ${existing ? "updated" : "created"} · ${saved.name}`)
-    } finally {
-      setSavingBrand(false)
+    // 2. record → database
+    const res = existing
+      ? await updateBrand({
+          id: existing.id,
+          name: values.name,
+          description: values.description,
+          logo: newKey ? { action: "replace", key: newKey } : { action: "keep" },
+        })
+      : await createBrand({ name: values.name, description: values.description, logoKey: newKey! })
+
+    if (!res.success) throw new Error(res.message) // dialog stays open + toast
+    const saved = res.data                           // real id, real logo URL
+
+    setBrands((list) => (existing ? list.map((b) => (b.id === saved.id ? saved : b)) : [saved, ...list]))
+    if (!existing) {
+      setFreshBrandId(saved.id)
+      if (fromWatch) selectBrandInDrawer.current?.(saved)
     }
+    selectBrandInDrawer.current = null
+    setBrandDialog((d) => ({ ...d, open: false }))
+    toast.success(`${res.message} · ${saved.name}`)
+  } finally {
+    setSavingBrand(false)
   }
+}
 
   // -------------------------------------------------------------------------
   // Deletes
@@ -310,32 +319,37 @@ export function WatchesManager({
   const askDelete = (target: DeleteTarget) => setConfirm({ open: true, target })
 
   const confirmDelete = async () => {
-    const target = confirm.target
-    if (!target) return
-    setDeleting(true)
-    try {
+  const target = confirm.target
+  if (!target) return
+  setDeleting(true)
+  try {
+    if (target.kind === "brand") {
+      const res = await deleteBrand(target.id)
+      if (!res.success) throw new Error(res.message) 
+    } else {
       await simulateRequest(null, { delay: 800 })
-      if (target.kind === "watch") {
-        setWatches((list) => list.filter((w) => w.id !== target.id))
-        setWatchDrawer((d) =>
-          d.state.mode === "edit" && d.state.watch.id === target.id
-            ? { ...d, open: false }
-            : d
-        )
-      } else {
-        setBrands((list) => list.filter((b) => b.id !== target.id))
-        setFilters((f) => (f.brand === target.id ? { ...f, brand: "" } : f))
-      }
-      setConfirm((c) => ({ ...c, open: false }))
-      toast.success(
-        `${target.kind === "brand" ? "Brand deleted" : "Deleted"} · ${target.name}`
-      )
-    } catch (error) {
-      toast.error(errorMessage(error, "Delete failed."))
-    } finally {
-      setDeleting(false)
     }
+    if (target.kind === "watch") {
+      setWatches((list) => list.filter((w) => w.id !== target.id))
+      setWatchDrawer((d) =>
+        d.state.mode === "edit" && d.state.watch.id === target.id
+          ? { ...d, open: false }
+          : d
+      )
+    } else {
+      setBrands((list) => list.filter((b) => b.id !== target.id))
+      setFilters((f) => (f.brand === target.id ? { ...f, brand: "" } : f))
+    }
+    setConfirm((c) => ({ ...c, open: false }))
+    toast.success(
+      `${target.kind === "brand" ? "Brand deleted" : "Deleted"} · ${target.name}`
+    )
+  } catch (error) {
+    toast.error(errorMessage(error, "Delete failed."))
+  } finally {
+    setDeleting(false)
   }
+}
 
   const rowHandlers: WatchRowHandlers = {
     onOpen: openEditWatch,

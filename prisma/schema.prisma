@@ -88,9 +88,9 @@ model VerificationCode {
 
 model Brand {
   id          String   @id @default(uuid())
-  name        String   @unique
+  name        String   @unique @db.Citext
   description String
-  logoKey     String?
+  logoKey     String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -133,6 +133,7 @@ model WatchImage {
   createdAt   DateTime @default(now())
 
   watch Watch @relation(fields: [watchId], references: [id], onDelete: Cascade)
+
   @@unique([watchId, sortOrder])
 }
 
