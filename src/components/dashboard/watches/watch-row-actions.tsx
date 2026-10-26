@@ -1,6 +1,6 @@
 "use client"
 
-import type { AdminWatch } from "@/app/(dashboard)/_data/mock-watches"
+import type { AdminWatch } from "@/app/(dashboard)/_data/types"
 import {
   DropdownMenu,
   DropdownMenuContent,

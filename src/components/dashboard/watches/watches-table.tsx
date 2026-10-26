@@ -3,7 +3,8 @@
 import type {
   AdminBrand,
   AdminWatch,
-} from "@/app/(dashboard)/_data/mock-watches"
+  AdminWatchImage,
+} from "@/app/(dashboard)/_data/types"
 import { cn } from "@/lib/utils"
 
 import { LiveToggle } from "./live-toggle"
@@ -19,7 +20,8 @@ export type WatchRowHandlers = {
   onDelete: (watch: AdminWatch) => void
   onToggle: (watch: AdminWatch) => void
   onAddImages: (watch: AdminWatch) => void
-  onRemoveImage: (watch: AdminWatch, imageId: string) => void
+  onRemoveImage: (watch: AdminWatch, image: AdminWatchImage) => void
+  onSetCover: (watch: AdminWatch, imageId: string) => void
 }
 
 export function TableHead({ muted = false }: { muted?: boolean }) {
@@ -63,11 +65,14 @@ export function WatchesTable({
   watches,
   brands,
   pendingIds,
+  imageBusyIds,
   handlers,
 }: {
   watches: AdminWatch[]
   brands: AdminBrand[]
   pendingIds: ReadonlySet<string>
+  /** watches with an image upload or reorder in flight */
+  imageBusyIds: ReadonlySet<string>
   handlers: WatchRowHandlers
 }) {
   return (
@@ -96,8 +101,10 @@ export function WatchesTable({
             >
               <WatchRowImages
                 watch={watch}
+                busy={imageBusyIds.has(watch.id)}
                 onAdd={handlers.onAddImages}
                 onRemove={handlers.onRemoveImage}
+                onSetCover={handlers.onSetCover}
               />
             </div>
 

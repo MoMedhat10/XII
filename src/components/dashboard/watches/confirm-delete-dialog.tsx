@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element -- small storage thumbnail in the image delete dialog */
 "use client"
 
 import {
@@ -13,13 +14,60 @@ import { cn } from "@/lib/utils"
 
 import { btn, btnGold, btnOutline, eyebrowSm, portalTheme } from "./watch-utils"
 
-export type DeleteTarget = { kind: "watch" | "brand"; id: string; name: string }
+export type DeleteTarget =
+  | { kind: "watch"; id: string; name: string }
+  | { kind: "brand"; id: string; name: string }
+  | {
+      kind: "image"
+      id: string
+      /** the watch's name */
+      name: string
+      watchId: string
+      url: string
+      /** 1-based position in the row */
+      position: number
+      /** another image takes over as cover */
+      isCover: boolean
+      /** deleting it unpublishes the watch */
+      isLastOfLive: boolean
+    }
 
-const BODY: Record<DeleteTarget["kind"], string> = {
+const BODY: Record<Exclude<DeleteTarget["kind"], "image">, string> = {
   watch:
     "will be permanently removed from inventory, along with its images. Customers who saved it lose it from their wishlist. This can't be undone.",
   brand:
     "will be permanently removed. Its logo and description go with it. This can't be undone.",
+}
+
+const EYEBROW: Record<DeleteTarget["kind"], string> = {
+  watch: "Delete watch",
+  brand: "Delete brand",
+  image: "Delete image",
+}
+
+function Body({ target }: { target: DeleteTarget }) {
+  if (target.kind !== "image") {
+    return (
+      <>
+        <strong className="font-semibold text-foreground">{target.name}</strong>{" "}
+        {BODY[target.kind]}
+      </>
+    )
+  }
+  return (
+    <>
+      Image {target.position} of{" "}
+      <strong className="font-semibold text-foreground">{target.name}</strong>{" "}
+      will be permanently removed. This can&apos;t be undone.
+      {target.isCover && <> The next image becomes the cover.</>}
+      {target.isLastOfLive && (
+        <strong className="mt-2 block font-semibold text-gold">
+          This is its only image, so the watch will be unpublished and moved
+          to drafts.
+        </strong>
+      )}
+    </>
+  )
 }
 
 export function ConfirmDeleteDialog({
@@ -44,15 +92,23 @@ export function ConfirmDeleteDialog({
         )}
       >
         <div className="flex items-center gap-3.5">
-          <span
-            aria-hidden="true"
-            className="flex size-12 shrink-0 items-center justify-center border-4 border-gold font-heading text-[22px] font-bold text-gold"
-          >
-            !
-          </span>
+          {target?.kind === "image" ? (
+            <img
+              src={target.url}
+              alt=""
+              className="size-12 shrink-0 border-4 border-gold object-cover"
+            />
+          ) : (
+            <span
+              aria-hidden="true"
+              className="flex size-12 shrink-0 items-center justify-center border-4 border-gold font-heading text-[22px] font-bold text-gold"
+            >
+              !
+            </span>
+          )}
           <div className="flex min-w-0 flex-col gap-0.5">
             <span className={eyebrowSm}>
-              {target?.kind === "brand" ? "Delete brand" : "Delete watch"}
+              {EYEBROW[target?.kind ?? "watch"]}
             </span>
             <AlertDialogTitle className="font-heading text-[28px] leading-[1.1] font-bold tracking-[-0.02em]">
               Are you sure?
@@ -61,10 +117,7 @@ export function ConfirmDeleteDialog({
         </div>
 
         <AlertDialogDescription className="text-[15px] leading-6 text-pretty text-muted-foreground">
-          <strong className="font-semibold text-foreground">
-            {target?.name}
-          </strong>{" "}
-          {target ? BODY[target.kind] : ""}
+          {target && <Body target={target} />}
         </AlertDialogDescription>
 
         <div className="flex gap-3">

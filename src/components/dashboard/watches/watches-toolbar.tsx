@@ -1,6 +1,6 @@
 "use client"
 
-import type { AdminBrand } from "@/app/(dashboard)/_data/mock-watches"
+import type { AdminBrand } from "@/app/(dashboard)/_data/types"
 import {
   WATCH_STATUS_FILTERS,
   type WatchFilters,
@@ -22,11 +22,17 @@ export function WatchesToolbar({
   filters,
   brands,
   onChange,
+  onClear,
 }: {
   filters: WatchFilters
   brands: AdminBrand[]
   onChange: (patch: Partial<WatchFilters>) => void
+  /** resets search, brand and status */
+  onClear: () => void
 }) {
+  const filtered =
+    filters.q.trim() !== "" || filters.brand !== "" || filters.status !== "all"
+
   return (
     <div className="flex flex-wrap items-center gap-3 border-b-2 border-surface-variant py-5">
       <Input
@@ -82,6 +88,17 @@ export function WatchesToolbar({
           )
         })}
       </div>
+
+      {filtered && (
+        <button
+          type="button"
+          onClick={onClear}
+          aria-label="Clear all filters"
+          className="h-12 border-2 border-surface-variant px-4 font-heading text-xs font-bold tracking-[1.5px] text-muted-foreground uppercase transition-colors hover:border-gold hover:text-gold max-sm:w-full"
+        >
+          ✕ Clear
+        </button>
+      )}
     </div>
   )
 }

@@ -1,10 +1,4 @@
-import type {
-  AdminBrand,
-  AdminWatch,
-} from "@/app/(dashboard)/_data/mock-watches"
-import type { WatchFilters } from "@/app/(dashboard)/_utils/watch-schema"
-
-export const PAGE_SIZE = 6
+import type { AdminBrand } from "@/app/(dashboard)/_data/types"
 
 export const pad = (n: number) => String(n).padStart(2, "0")
 
@@ -27,18 +21,6 @@ export const initials = (name: string) =>
 
 export const brandNameFor = (brands: AdminBrand[], id: string) =>
   brands.find((brand) => brand.id === id)?.name ?? "—"
-
-export function filterWatches(watches: AdminWatch[], filters: WatchFilters) {
-  const query = filters.q.trim().toLowerCase()
-  return watches.filter(
-    (watch) =>
-      (!query ||
-        `${watch.name} ${watch.model}`.toLowerCase().includes(query)) &&
-      (!filters.brand || watch.brandId === filters.brand) &&
-      (filters.status === "all" ||
-        (filters.status === "live" ? watch.isActive : !watch.isActive))
-  )
-}
 
 // ---------------------------------------------------------------------------
 // Shared class names for the admin's dark, brutalist controls

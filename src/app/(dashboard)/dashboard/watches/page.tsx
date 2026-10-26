@@ -4,6 +4,7 @@ import { WatchesManager } from "@/components/dashboard/watches/watches-manager"
 
 import { watchFiltersSchema } from "../../_utils/watch-schema"
 import { getAdminBrands } from "../../_data/brands"
+import { getAdminWatchPage } from "../../_data/watches"
 
 export const metadata: Metadata = {
   title: "Watches — XII Admin",
@@ -16,13 +17,16 @@ export default async function AdminWatchesPage({
 }) {
   const params = await searchParams
   const filters = watchFiltersSchema.parse(params)
-  const brands = await getAdminBrands()  
+  const [data, brands] = await Promise.all([
+    getAdminWatchPage(filters),
+    getAdminBrands(),
+  ])
 
   return (
     <WatchesManager
-      initialWatches={[]}
-      initialBrands={brands}
-      initialFilters={filters}
+      data={data}
+      brands={brands}
+      filters={{ ...filters, page: data.page }}
     />
   )
 }

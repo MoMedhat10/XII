@@ -2,7 +2,7 @@ import "server-only"
 import type { Prisma } from "@/app/generated/prisma/client"
 import prisma from "../../../../lib/prisma"
 import { getPublicUrl } from "../../../../lib/storage"
-import type { AdminBrand } from "./mock-watches" 
+import type { AdminBrand } from "./types" 
 
 export const brandSelect = {
   id: true,

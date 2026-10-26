@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Controller, useForm } from "react-hook-form"
 import { toast } from "sonner"
 
-import type { AdminBrand } from "@/app/(dashboard)/_data/mock-watches"
+import type { AdminBrand } from "@/app/(dashboard)/_data/types"
 import {
   brandLogoFileSchema,
   createBrandFormSchema,

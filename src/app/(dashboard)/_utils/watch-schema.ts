@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { BRAND_LOGO_TYPES, MAX_BRAND_LOGO_BYTES, MAX_PRICE_DOLLARS, MAX_STOCK, MAX_WATCH_IMAGE_BYTES, WATCH_IMAGE_TYPES } from "./upload-rules"
+import { BRAND_LOGO_TYPES, MAX_BRAND_LOGO_BYTES, MAX_PRICE_DOLLARS, MAX_STOCK, MAX_WATCH_IMAGE_BYTES, MAX_WATCH_IMAGES, WATCH_IMAGE_TYPES } from "./upload-rules"
 import { brandFields } from "./brand-schema"
 
 
@@ -83,6 +83,74 @@ export const watchFormSchema = z.object({
 export type WatchFormInput = z.infer<typeof watchFormSchema>
 
 // ---------------------------------------------------------------------------
+// Server action inputs
+// ---------------------------------------------------------------------------
+
+const tmpWatchImageKey = z
+  .string()
+  .regex(/^tmp\/watches\/[0-9a-f-]{36}\.(png|webp|jpg)$/, "Invalid image upload.")
+
+export const watchImageUploadSchema = z.object({
+  contentType: z.enum(WATCH_IMAGE_TYPES, "Use a JPEG, PNG or WebP image."),
+  size: z
+    .number()
+    .int()
+    .positive()
+    .max(MAX_WATCH_IMAGE_BYTES, "Images must be 5 MB or smaller."),
+})
+
+const unique = (values: string[]) => new Set(values).size === values.length
+
+// a new watch has no images: they're added from the table row afterwards
+export const createWatchSchema = watchFormSchema.extend({
+  brandId: z.uuid("Pick a brand."),
+})
+
+// isActive and images have their own actions (and rules), so they're not here
+export const updateWatchSchema = watchFormSchema.extend({
+  id: z.uuid(),
+  brandId: z.uuid("Pick a brand."),
+  /** the version the admin opened; a mismatch means someone else saved first */
+  updatedAt: z.iso.datetime(),
+})
+
+export const setWatchActiveSchema = z.object({
+  id: z.uuid(),
+  isActive: z.boolean(),
+})
+
+export const deleteWatchSchema = z.object({ id: z.uuid() })
+
+export const addWatchImagesSchema = z.object({
+  watchId: z.uuid(),
+  imageKeys: z
+    .array(tmpWatchImageKey)
+    .min(1, "Pick at least one image.")
+    .max(MAX_WATCH_IMAGES, `Add at most ${MAX_WATCH_IMAGES} images.`)
+    .refine(unique, "Duplicate image upload."),
+})
+
+export const deleteWatchImageSchema = z.object({ id: z.uuid() })
+
+/** The full new order, first = cover. */
+export const reorderWatchImagesSchema = z.object({
+  watchId: z.uuid(),
+  imageIds: z
+    .array(z.uuid())
+    .min(1)
+    .max(MAX_WATCH_IMAGES)
+    .refine(unique, "Duplicate image."),
+})
+
+export type CreateWatchInput = z.infer<typeof createWatchSchema>
+export type UpdateWatchInput = z.infer<typeof updateWatchSchema>
+export type SetWatchActiveInput = z.infer<typeof setWatchActiveSchema>
+export type DeleteWatchInput = z.infer<typeof deleteWatchSchema>
+export type AddWatchImagesInput = z.infer<typeof addWatchImagesSchema>
+export type DeleteWatchImageInput = z.infer<typeof deleteWatchImageSchema>
+export type ReorderWatchImagesInput = z.infer<typeof reorderWatchImagesSchema>
+
+// ---------------------------------------------------------------------------
 // Brand dialog form (names are unique, case-insensitively, like the DB)
 // ---------------------------------------------------------------------------
 
@@ -111,9 +179,13 @@ export type BrandFormInput = z.infer<ReturnType<typeof createBrandFormSchema>>
 
 export const WATCH_STATUS_FILTERS = ["all", "live", "draft"] as const
 
+/** Rows per page in the admin watch list (shared by the query and the UI). */
+export const WATCHES_PAGE_SIZE = 6
+
 export const watchFiltersSchema = z.object({
   q: z.string().trim().max(100).catch(""),
-  brand: z.string().trim().max(64).catch(""),
+  // anything that isn't a real id falls back to "all brands"
+  brand: z.union([z.uuid(), z.literal("")]).catch(""),
   status: z.enum(WATCH_STATUS_FILTERS).catch("all"),
   page: z.coerce.number().int().min(1).catch(1),
 })

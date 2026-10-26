@@ -13,10 +13,8 @@ import {
   type CreateBrandInput, type UpdateBrandInput,
 } from "../_utils/brand-schema"
 import { brandSelect, toAdminBrand } from "../_data/brands"
-import type { AdminBrand } from "../_data/mock-watches"
-
-type ActionRes<T> = { success: true; message: string; data: T } | { success: false; message: string }
-const fail = (message: string) => ({ success: false as const, message })
+import type { AdminBrand } from "../_data/types"
+import { fail, type ActionRes } from "../_utils/action-result"
 
 
 async function promoteLogo(tmpKey: string) {

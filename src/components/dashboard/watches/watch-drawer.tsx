@@ -8,7 +8,7 @@ import { toast } from "sonner"
 import type {
   AdminBrand,
   AdminWatch,
-} from "@/app/(dashboard)/_data/mock-watches"
+} from "@/app/(dashboard)/_data/types"
 import {
   formatPriceInput,
   watchFormSchema,
@@ -102,6 +102,7 @@ export function WatchDrawer({
           brands={brands}
           saving={saving}
           onSubmit={onSubmit}
+          onClose={() => onOpenChange(false)}
           onCreateBrand={onCreateBrand}
           onDelete={onDelete}
         />
@@ -115,6 +116,7 @@ function WatchForm({
   brands,
   saving,
   onSubmit,
+  onClose,
   onCreateBrand,
   onDelete,
 }: {
@@ -122,6 +124,7 @@ function WatchForm({
   brands: AdminBrand[]
   saving: boolean
   onSubmit: (values: WatchFormInput) => Promise<void>
+  onClose: () => void
   onCreateBrand: (select: (brand: AdminBrand) => void) => void
   onDelete: (watch: AdminWatch) => void
 }) {
@@ -134,7 +137,7 @@ function WatchForm({
     control,
     handleSubmit,
     setValue,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<WatchFormInput>({
     resolver: zodResolver(watchFormSchema),
     defaultValues: toDefaults(state),
@@ -145,6 +148,8 @@ function WatchForm({
   const busy = isSubmitting || saving
 
   const submit = async (values: WatchFormInput) => {
+    // nothing changed: no request, just close
+    if (editing && !isDirty) return onClose()
     try {
       await onSubmit(values)
     } catch (error) {
@@ -179,10 +184,16 @@ function WatchForm({
           <SheetTitle className="truncate font-heading text-[28px] leading-[1.05] font-bold tracking-[-0.02em] sm:text-4xl">
             {name || (editing ? "Untitled" : "New watch")}
           </SheetTitle>
-          <SheetDescription className="sr-only">
+          <SheetDescription
+            className={cn(
+              editing
+                ? "sr-only"
+                : "text-[13px] leading-5 text-muted-foreground"
+            )}
+          >
             {editing
               ? "Update this watch's details."
-              : "Add a new watch to the inventory."}
+              : "Saved as a draft. Add images and publish from the list."}
           </SheetDescription>
         </div>
         <SheetClose asChild>
@@ -397,7 +408,7 @@ function WatchForm({
           className={cn(btn, btnGold, "flex-1 px-4")}
         >
           {busy && <Spinner aria-hidden="true" />}
-          {busy ? "Saving…" : editing ? "Save changes" : "Create watch"}
+          {busy ? "Saving…" : editing ? "Save changes" : "Create draft"}
         </Button>
       </div>
     </form>

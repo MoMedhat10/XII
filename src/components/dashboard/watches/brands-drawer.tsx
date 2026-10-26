@@ -1,10 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- logos are blob: URLs from local uploads */
 "use client"
 
-import type {
-  AdminBrand,
-  AdminWatch,
-} from "@/app/(dashboard)/_data/mock-watches"
+import type { AdminBrand } from "@/app/(dashboard)/_data/types"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -58,7 +55,6 @@ export function BrandLogo({
 export function BrandsDrawer({
   open,
   brands,
-  watches,
   freshId,
   onOpenChange,
   onNewBrand,
@@ -68,7 +64,6 @@ export function BrandsDrawer({
 }: {
   open: boolean
   brands: AdminBrand[]
-  watches: AdminWatch[]
   /** The brand created most recently, highlighted in the list. */
   freshId: string | null
   onOpenChange: (open: boolean) => void
