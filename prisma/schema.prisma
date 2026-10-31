@@ -29,6 +29,26 @@ enum VerificationCodeType {
   PASSWORD_RESET
 }
 
+enum WatchGender {
+  MEN
+  WOMEN
+  UNISEX
+}
+
+enum MovementType {
+  AUTOMATIC
+  MANUAL
+  QUARTZ
+  SOLAR
+  SMART
+}
+
+enum WatchCondition {
+  NEW
+  PRE_OWNED
+  REFURBISHED
+}
+
 model User {
   id           String   @id @default(uuid())
   username     String   @unique @db.Citext
@@ -98,16 +118,21 @@ model Brand {
 }
 
 model Watch {
-  id          String   @id @default(uuid())
-  name        String
-  description String
-  model       String
-  priceCents  Int
-  stock       Int
-  brandId     String
-  isActive    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String          @id @default(uuid())
+  name         String
+  description  String
+  model        String
+  priceCents   Int
+  stock        Int
+  brandId      String
+  gender       WatchGender?
+  movement     MovementType?
+  caliber      String?
+  caseMaterial String?
+  condition    WatchCondition?
+  isActive     Boolean         @default(false)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
 
   brand      Brand           @relation(fields: [brandId], references: [id])
   images     WatchImage[]
