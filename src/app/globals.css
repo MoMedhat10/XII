@@ -284,3 +284,38 @@
     line-height: 20px;
   }
 }
+/* Dual-thumb price slider: two stacked range inputs, only the thumbs take
+   pointer events so both can be dragged. */
+@layer components {
+  .xii-range {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    pointer-events: none;
+  }
+  .xii-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 24px;
+    background: var(--foreground);
+    border: 3px solid var(--background);
+    outline: 2px solid var(--foreground);
+    cursor: pointer;
+    pointer-events: auto;
+  }
+  .xii-range::-moz-range-thumb {
+    width: 16px;
+    height: 24px;
+    background: var(--foreground);
+    border: 3px solid var(--background);
+    border-radius: 0;
+    cursor: pointer;
+    pointer-events: auto;
+  }
+  .xii-range:focus-visible::-webkit-slider-thumb {
+    outline-color: var(--gold);
+  }
+  .xii-range:focus-visible::-moz-range-thumb {
+    outline: 2px solid var(--gold);
+  }
+}

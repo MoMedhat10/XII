@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Space_Grotesk, IBM_Plex_Sans, Geist_Mono } from "next/font/google"
 
 import "./globals.css"
+import { QueryProvider } from "@/components/query-provider"
 import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from "@/lib/utils"
 import { Toaster } from "sonner"
@@ -46,7 +47,9 @@ export default function RootLayout({
       )}
     >
       <body>
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <QueryProvider>{children}</QueryProvider>
+        </ThemeProvider>
         <Toaster position="top-center" richColors />
       </body>
     </html>
