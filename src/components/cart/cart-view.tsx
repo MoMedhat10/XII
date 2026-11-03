@@ -74,7 +74,7 @@ export function CartView({
           </h1>
         </div>
         <Link
-          href="/#drop"
+          href="/watches"
           className="border-b-4 pb-1 font-heading text-sm leading-6 font-bold tracking-[1.5px] uppercase transition-colors hover:border-gold hover:text-gold"
         >
           ← Continue Browsing

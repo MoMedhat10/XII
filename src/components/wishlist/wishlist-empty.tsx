@@ -45,7 +45,7 @@ export function WishlistEmpty() {
         </p>
         <div className="mt-2 flex flex-wrap justify-center gap-4">
           <Link
-            href="/#drop"
+            href="/watches"
             className={cn(
               button,
               "border-foreground bg-gold text-white hover:bg-black"

@@ -1,11 +1,11 @@
 import { cn } from "@/lib/utils"
 
 import { gutter } from "../home/styles"
+import { rowLayout } from "./wishlist-layout"
 
 const block = "animate-pulse bg-card"
 
-const row =
-  "grid grid-cols-[24px_72px_1fr] items-start gap-x-4 gap-y-3 border-b-2 border-surface-variant px-4 py-5 sm:grid-cols-[24px_88px_1fr] xl:grid-cols-[40px_88px_minmax(220px,1.6fr)_minmax(150px,1fr)_minmax(150px,1fr)_120px_196px] xl:items-center xl:gap-5"
+const row = cn(rowLayout, "border-b-2 border-surface-variant px-4 py-5")
 
 export function WishlistLoading() {
   return (

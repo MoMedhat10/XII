@@ -173,6 +173,7 @@ model FavoriteWatch {
 
   @@unique([userId, watchId])
   @@index([watchId])
+  @@index([userId, createdAt])
 }
 
 model Cart {

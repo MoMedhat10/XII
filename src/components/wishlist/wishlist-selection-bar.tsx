@@ -1,14 +1,15 @@
+import type { WishlistItem } from "@/app/(app)/wishlist/_data/types"
 import { cn } from "@/lib/utils"
 
 import { gutter } from "../home/styles"
-import type { WishlistItem } from "./wishlist-view"
 
 const action =
-  "h-11 cursor-pointer border-4 border-black px-2 font-sans text-[11px] font-bold tracking-[1px] uppercase transition-colors sm:h-12 sm:px-5 sm:text-[13px] sm:tracking-[1.5px]"
+  "h-11 cursor-pointer border-4 border-black px-2 font-sans text-[11px] font-bold tracking-[1px] uppercase transition-colors disabled:cursor-default disabled:opacity-40 sm:h-12 sm:px-5 sm:text-[13px] sm:tracking-[1.5px]"
 
 export function WishlistSelectionBar({
   items,
   total,
+  disabled = false,
   onClear,
   onRemove,
   onCompare,
@@ -16,6 +17,8 @@ export function WishlistSelectionBar({
 }: {
   items: WishlistItem[]
   total: string
+  /** an action is in flight */
+  disabled?: boolean
   onClear: () => void
   onRemove: () => void
   onCompare: () => void
@@ -58,6 +61,7 @@ export function WishlistSelectionBar({
             </button>
             <button
               type="button"
+              disabled={disabled}
               onClick={onRemove}
               className={cn(
                 action,
@@ -82,6 +86,7 @@ export function WishlistSelectionBar({
             </button>
             <button
               type="button"
+              disabled={disabled}
               onClick={onAddToBag}
               className={cn(
                 action,

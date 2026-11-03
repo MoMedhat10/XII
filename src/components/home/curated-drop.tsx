@@ -44,7 +44,7 @@ export function CuratedDrop({ watches }: ICuratedDrop) {
         <SectionHeader
           eyebrowText="02 — Curated Drop"
           title="The Autumn Exhibit"
-          href="/#drop"
+          href="/watches"
           linkLabel="View all timepieces →"
         />
       </Reveal>
