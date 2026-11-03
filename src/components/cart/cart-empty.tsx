@@ -1,17 +1,21 @@
 import Link from "next/link"
 
+import type { CartPick } from "@/app/(app)/cart/_data/types"
+import { formatPrice } from "@/components/dashboard/watches/watch-utils"
 import { ImageFallback } from "@/components/image-fallback"
 import { cn } from "@/lib/utils"
 
 import { button, eyebrow, gridBackdrop, monoCaption } from "../home/styles"
-import { usd, type CartItem } from "./cart-types"
 
 export function CartEmpty({
   picks,
+  pending,
   onAdd,
 }: {
-  picks: CartItem[]
-  onAdd: (pick: CartItem) => void
+  picks: CartPick[]
+  /** an add is in flight */
+  pending: boolean
+  onAdd: (watchId: string) => void
 }) {
   return (
     <section className="relative flex min-h-[calc(100vh-88px)] flex-col items-center justify-center overflow-hidden bg-[#141515] px-6 pt-24 pb-16 sm:py-24">
@@ -89,8 +93,8 @@ export function CartEmpty({
                   fill
                   unoptimized
                   sizes="320px"
-                  src={pick.image}
-                  alt={pick.name}
+                  src={pick.image?.url}
+                  alt={pick.image?.alt || pick.name}
                   label="Photo"
                   wrapperClassName="aspect-[4/3] border-b-4 border-current"
                   className="object-cover"
@@ -98,13 +102,14 @@ export function CartEmpty({
                 <div className="flex justify-between gap-2 px-4 py-3 font-heading text-lg leading-6 font-semibold">
                   <span>{pick.name}</span>
                   <span className="text-gold group-hover:text-[#7C5A3C]">
-                    {usd(pick.price)}
+                    {formatPrice(pick.priceCents)}
                   </span>
                 </div>
                 <button
                   type="button"
-                  onClick={() => onAdd(pick)}
-                  className="h-11 w-full cursor-pointer border-t-4 border-current font-sans text-xs font-bold tracking-[1.5px] uppercase"
+                  disabled={pending}
+                  onClick={() => onAdd(pick.id)}
+                  className="h-11 w-full cursor-pointer border-t-4 border-current font-sans text-xs font-bold tracking-[1.5px] uppercase disabled:cursor-default disabled:opacity-60"
                 >
                   + Add to Bag
                 </button>

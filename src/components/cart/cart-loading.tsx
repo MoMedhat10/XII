@@ -58,7 +58,6 @@ export function CartLoading() {
             <div className={cn(block, "h-3.5")} />
             <div className={cn(block, "h-3.5 w-4/5")} />
             <div className={cn(block, "h-3.5 w-[70%]")} />
-            <div className="h-12 border-4" />
             <div className={cn(block, "h-10")} />
           </div>
           <div className="flex flex-col gap-3 px-6 pt-3 pb-6">
