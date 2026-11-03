@@ -10,11 +10,13 @@ import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { AlertCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { useQueryClient } from "@tanstack/react-query"
 import { loginUser } from "@/app/(auth)/_actions"
 import { toast } from "sonner"
 
 export function LoginForm() {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const {
     register,
@@ -37,6 +39,8 @@ export function LoginForm() {
         return;
       }
       toast.success(result.message);
+      // drop data cached as a guest (e.g. favorites saying "signed out")
+      queryClient.clear();
       router.push("/");
   }
 

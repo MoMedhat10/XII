@@ -1,3 +1,5 @@
+import Link from "next/link"
+
 import type { CartLine as CartLineData } from "@/app/(app)/cart/_data/types"
 import { lineTotal } from "@/app/(app)/cart/_utils/cart-lines"
 import { formatPrice } from "@/components/dashboard/watches/watch-utils"
@@ -39,9 +41,12 @@ export function CartLine({
         <span className="font-sans text-xs leading-5 tracking-[0.1em] text-muted-foreground uppercase sm:text-sm">
           {line.model} · {line.spec}
         </span>
-        <span className="font-heading text-xl leading-7 font-semibold sm:text-[28px] sm:leading-[34px]">
+        <Link
+          href={`/watches/${line.id}`}
+          className="self-start font-heading text-xl leading-7 font-semibold transition-colors hover:text-gold sm:text-[28px] sm:leading-[34px]"
+        >
           {line.name}
-        </span>
+        </Link>
         {line.flag && (
           <span className="self-start border-2 border-gold px-2 py-0.5 font-heading text-[11px] leading-4 font-bold tracking-[1.5px] text-gold uppercase">
             {line.flag}

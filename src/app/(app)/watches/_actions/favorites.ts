@@ -1,5 +1,6 @@
 "use server"
 
+import { refresh } from "next/cache"
 import { getCurrentUser } from "@/app/(auth)/_utils/session"
 
 import prisma from "../../../../../lib/prisma"
@@ -37,13 +38,14 @@ export async function setFavorite(input: FavoriteInput): Promise<FavoriteRes> {
         create: { userId: user.id, watchId },
         update: {},
       })
-      
     } else {
       await prisma.favoriteWatch.deleteMany({
         where: { userId: user.id, watchId },
       })
     }
 
+    // the watch detail page reads saved state from the server
+    refresh()
     return {
       success: true,
       message: saved ? "Saved to your vitrine" : "Removed from your vitrine",

@@ -1,11 +1,13 @@
 "use client"
 
+import Link from "next/link"
+
 import { ImageFallback } from "@/components/image-fallback"
 import type { CatalogWatch } from "@/app/(app)/watches/_data/types"
 import { cn } from "@/lib/utils"
 import { formatPrice } from "../dashboard/watches/watch-utils"
 
-const sizes = "(min-width: 1280px) 25vw, (min-width: 768px) 40vw, 100vw"
+const defaultSizes = "(min-width: 1280px) 25vw, (min-width: 768px) 40vw, 100vw"
 
 function HeartIcon({ filled }: { filled: boolean }) {
   return (
@@ -23,102 +25,105 @@ function HeartIcon({ filled }: { filled: boolean }) {
   )
 }
 
+/**
+ * The watch card used by the catalog and the home page's Curated Drop.
+ * The whole card links to the watch; the heart only shows when
+ * `onToggleSave` is passed.
+ */
 export function WatchCard({
   watch,
-  index,
-  saved,
+  saved = false,
   onToggleSave,
+  index,
+  sizes = defaultSizes,
+  className,
 }: {
   watch: CatalogWatch
+  saved?: boolean
+  onToggleSave?: () => void
   /** position in its page, for the staggered entrance */
-  index: number
-  saved: boolean
-  onToggleSave: () => void
+  index?: number
+  sizes?: string
+  className?: string
 }) {
-  const [cover, second] = watch.images
-  const swaps = Boolean(second)
+  const staggered = index !== undefined
 
   return (
     <article
-      style={{ animationDelay: `${index * 50}ms` }}
-      className="group animate-[xii-up_0.6s_cubic-bezier(0.2,0.7,0.2,1)_both] border-4 bg-background text-foreground transition-colors duration-200 hover:bg-foreground hover:text-black"
+      style={staggered ? { animationDelay: `${index * 50}ms` } : undefined}
+      className={cn(
+        "group relative h-full border-4 bg-card text-foreground transition-colors duration-200 hover:bg-foreground hover:text-black",
+        staggered && "animate-[xii-up_0.6s_var(--ease-xii)_both]",
+        className
+      )}
     >
-      <div className="relative border-b-4 border-foreground transition-colors group-hover:border-black">
+      <div className="relative">
         <ImageFallback
           fill
           sizes={sizes}
-          src={cover?.url}
-          alt={cover?.alt || watch.name}
+          src={watch.image?.url}
+          alt={watch.image?.alt || watch.name}
           label="No photograph"
-          wrapperClassName="aspect-[4/5]"
+          wrapperClassName="aspect-4/5 border-b-4"
           className="object-cover"
         />
-        {/* second image fades in on hover, as in the design */}
-        {second && (
-          <ImageFallback
-            fill
-            sizes={sizes}
-            src={second.url}
-            alt={second.alt || watch.name}
-            wrapperClassName="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-            className="object-cover"
-          />
-        )}
 
-        <button
-          type="button"
-          aria-label={
-            saved
-              ? `Remove ${watch.name} from vitrine`
-              : `Save ${watch.name} to vitrine`
-          }
-          aria-pressed={saved}
-          onClick={onToggleSave}
-          className={cn(
-            "absolute top-3 right-3 flex size-10 items-center justify-center border-4 transition-colors",
-            saved
-              ? "border-gold bg-gold text-black"
-              : "border-foreground bg-background text-foreground hover:border-gold hover:text-gold"
-          )}
-        >
-          <HeartIcon filled={saved} />
-        </button>
-
-        {watch.images.length > 0 && (
-          <span
-            className="absolute bottom-3 left-3 flex gap-1"
-            aria-hidden="true"
+        {onToggleSave && (
+          <button
+            type="button"
+            aria-label={
+              saved
+                ? `Remove ${watch.name} from vitrine`
+                : `Save ${watch.name} to vitrine`
+            }
+            aria-pressed={saved}
+            onClick={onToggleSave}
+            className={cn(
+              // above the card's stretched link, so saving doesn't navigate
+              "absolute top-3 right-3 z-10 flex size-10 cursor-pointer items-center justify-center border-4 transition-colors",
+              saved
+                ? "border-gold bg-gold text-black"
+                : "border-foreground bg-background text-foreground hover:border-gold hover:text-gold"
+            )}
           >
-            {watch.images.map((image, k) => (
-              <span
-                key={image.url}
-                className={cn(
-                  "h-1 w-4 transition-colors",
-                  k === 0 &&
-                    (swaps
-                      ? "bg-gold group-hover:bg-surface-variant"
-                      : "bg-gold"),
-                  k === 1 && "bg-surface-variant group-hover:bg-gold",
-                  k > 1 && "bg-surface-variant"
-                )}
-              />
-            ))}
-          </span>
+            <HeartIcon filled={saved} />
+          </button>
         )}
       </div>
 
-      <div className="flex flex-col gap-1 px-5 pt-4 pb-5">
-        <span className="font-sans text-[13px] leading-5 tracking-[0.1em] uppercase opacity-75">
-          {watch.brand}
-        </span>
-        <div className="flex items-baseline justify-between gap-3">
-          <h3 className="font-heading text-2xl leading-[30px] font-semibold">
-            {watch.name}
-          </h3>
-          <span className="font-heading text-lg leading-7 font-bold tracking-[0.5px] whitespace-nowrap text-gold transition-colors group-hover:text-[#7C5A3C]">
+      <div className="flex flex-col gap-4 p-6">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <span className="block font-sans text-sm leading-5 tracking-widest uppercase">
+              {watch.model}
+            </span>
+            <h3 className="font-heading text-[28px] leading-[34px] font-semibold">
+              {/* the ::after overlay makes the whole card clickable */}
+              <Link
+                href={`/watches/${watch.id}`}
+                className="outline-none after:absolute after:inset-0 focus-visible:after:outline-4 focus-visible:after:outline-gold"
+              >
+                {watch.name}
+              </Link>
+            </h3>
+          </div>
+          <span className="font-heading text-lg leading-6 font-bold tracking-[1.5px] whitespace-nowrap text-gold">
             {formatPrice(watch.priceCents)}
           </span>
         </div>
+
+        <dl className="flex flex-col gap-2 border-t-2 border-current pt-4 font-sans text-base leading-[26px]">
+          <div className="flex justify-between gap-4">
+            <dt>Caliber</dt>
+            <dd className="text-right font-semibold">{watch.caliber || "—"}</dd>
+          </div>
+          <div className="flex justify-between gap-4 border-t-2 border-current pt-2">
+            <dt>Case</dt>
+            <dd className="text-right font-semibold">
+              {watch.caseMaterial || "—"}
+            </dd>
+          </div>
+        </dl>
       </div>
     </article>
   )

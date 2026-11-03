@@ -10,22 +10,41 @@ const catalogWatchSelect = {
   name: true,
   model: true,
   priceCents: true,
+  caliber: true,
+  caseMaterial: true,
   brand: { select: { name: true } },
-  images: { select: { key: true, alt: true }, orderBy: { sortOrder: "asc" } },
+  // the card shows the cover only
+  images: {
+    select: { key: true, alt: true },
+    orderBy: { sortOrder: "asc" },
+    take: 1,
+  },
 } satisfies Prisma.WatchSelect
 
 type CatalogWatchRow = Prisma.WatchGetPayload<{
   select: typeof catalogWatchSelect
 }>
 
-const toCatalogWatch = (w: CatalogWatchRow): CatalogWatch => ({
-  id: w.id,
-  name: w.name,
-  model: w.model,
-  brand: w.brand.name,
-  priceCents: w.priceCents,
-  images: w.images.map((i) => ({ url: getPublicUrl(i.key), alt: i.alt })),
+const toCatalogWatch = ({
+  brand,
+  images: [cover],
+  ...w
+}: CatalogWatchRow): CatalogWatch => ({
+  ...w,
+  brand: brand.name,
+  image: cover ? { url: getPublicUrl(cover.key), alt: cover.alt } : null,
 })
+
+/** The newest live watches, for the home page's Curated Drop. */
+export async function getFeaturedWatches(limit = 3): Promise<CatalogWatch[]> {
+  const rows = await prisma.watch.findMany({
+    where: { isActive: true },
+    select: catalogWatchSelect,
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    take: limit,
+  })
+  return rows.map(toCatalogWatch)
+}
 
 // id breaks ties so rows never jump between pages
 const ORDER_BY: Record<

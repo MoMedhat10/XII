@@ -1,3 +1,5 @@
+import Link from "next/link"
+
 import type { WishlistItem } from "@/app/(app)/wishlist/_data/types"
 import {
   flagFor,
@@ -56,9 +58,12 @@ export function WishlistRow({
         <span className="block font-sans text-xs leading-5 tracking-[0.1em] text-muted-foreground uppercase sm:text-sm">
           {item.model} · saved {item.savedLabel}
         </span>
-        <span className="block font-heading text-xl leading-7 font-semibold sm:text-2xl sm:leading-8 xl:text-[28px] xl:leading-[34px]">
+        <Link
+          href={`/watches/${item.id}`}
+          className="block font-heading text-xl leading-7 font-semibold transition-colors hover:text-gold sm:text-2xl sm:leading-8 xl:text-[28px] xl:leading-[34px]"
+        >
           {item.name}
-        </span>
+        </Link>
         <span className="mt-1 block font-sans text-sm leading-5 text-muted-foreground xl:hidden">
           {item.brand} · {status}
         </span>

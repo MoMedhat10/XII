@@ -2,6 +2,7 @@
 
 import { useTransition } from "react"
 import { useRouter } from "next/navigation"
+import { useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { logout } from "@/app/(auth)/_actions"
@@ -9,6 +10,7 @@ import { cn } from "@/lib/utils"
 
 export function LogoutButton({ className }: { className?: string }) {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [pending, startTransition] = useTransition()
 
   const handleLogout = () => {
@@ -19,6 +21,8 @@ export function LogoutButton({ className }: { className?: string }) {
         toast.error(result.message)
       } else {
         toast.success(result.message)
+        // drop the previous user's cached data (e.g. their saved hearts)
+        queryClient.clear()
       }
 
       router.refresh()

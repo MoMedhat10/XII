@@ -3,13 +3,17 @@ export type CatalogWatchImage = {
   alt: string
 }
 
+/** One watch card, on the catalog and the home page's Curated Drop. */
 export type CatalogWatch = {
   id: string
   name: string
   model: string
   brand: string
   priceCents: number
-  images: CatalogWatchImage[]
+  caliber: string | null
+  caseMaterial: string | null
+  /** cover photo, or null when the watch has none */
+  image: CatalogWatchImage | null
 }
 
 export type CatalogPage = {

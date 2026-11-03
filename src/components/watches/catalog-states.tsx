@@ -3,18 +3,28 @@ import { cn } from "@/lib/utils"
 import { button } from "../home/styles"
 
 export const catalogGrid =
-  "grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-6"
+  "grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-6"
 
+/** Placeholder in the shape of WatchCard. */
 export function CardSkeleton({ delay = 0 }: { delay?: number }) {
   return (
     <div
       style={{ animationDelay: `${delay}ms` }}
       className="animate-[xii-pulse_1.4s_ease-in-out_infinite] border-4 border-surface-variant"
     >
-      <div className="aspect-[4/5] border-b-4 border-surface-variant bg-card" />
-      <div className="flex flex-col gap-2.5 px-5 pt-4 pb-5">
-        <span className="h-3 w-2/5 bg-card" />
-        <span className="h-6 w-3/4 bg-card" />
+      <div className="aspect-4/5 border-b-4 border-surface-variant bg-card" />
+      <div className="flex flex-col gap-4 p-6">
+        <div className="flex justify-between gap-4">
+          <div className="flex flex-1 flex-col gap-2">
+            <span className="h-3.5 w-2/5 bg-card" />
+            <span className="h-7 w-3/4 bg-card" />
+          </div>
+          <span className="h-5 w-16 bg-card" />
+        </div>
+        <div className="flex flex-col gap-3 border-t-2 border-surface-variant pt-4">
+          <span className="h-4 bg-card" />
+          <span className="h-4 bg-card" />
+        </div>
       </div>
     </div>
   )
