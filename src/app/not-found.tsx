@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 
-import { Nav } from "@/components/home/nav"
 import { button, gridBackdrop, gutter } from "@/components/home/styles"
 import { StoppedWatch } from "@/components/not-found/stopped-watch"
 import { cn } from "@/lib/utils"
@@ -15,8 +14,20 @@ export const metadata: Metadata = {
 export default function NotFound() {
   return (
     <div className="dark bg-background text-foreground">
-      <Nav />
-      <main className="relative flex min-h-[calc(100vh-88px)] items-center overflow-hidden bg-[#141515]">
+      <header className="relative z-10 border-b-4">
+        <div className={cn(gutter, "flex h-16 items-center justify-between")}>
+          <Link
+            href="/"
+            className="font-heading text-3xl leading-none font-bold tracking-[-0.02em] transition-colors hover:text-gold"
+          >
+            XII
+          </Link>
+          <span className="font-mono text-[11px] tracking-[.2em] text-muted-foreground uppercase">
+            Error 404
+          </span>
+        </div>
+      </header>
+      <main className="relative flex min-h-[calc(100vh-68px)] items-center overflow-hidden bg-[#141515]">
         <div className={cn(gridBackdrop, "opacity-[0.06]")} />
         <div
           className={cn(
