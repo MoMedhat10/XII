@@ -74,7 +74,7 @@ export function useCart({ lines: serverLines, picks }: CartPage) {
     }
     confirmed.current.set(id, res.data.quantity)
     setOverrides((o) => ({ ...o, [id]: res.data }))
-    if (res.message) toast(res.message) // the server clamped to stock
+    if (res.message) toast.info(res.message) // the server clamped to stock
   }, [])
 
   /** Sends every waiting save now. Await it before reading the cart. */

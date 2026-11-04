@@ -32,7 +32,7 @@ export function useWatchActions(
 
   const requireSignIn = (message: string) => {
     if (viewer.signedIn) return false
-    toast(message, {
+    toast.info(message, {
       action: { label: "Sign in", onClick: () => router.push("/login") },
     })
     return true

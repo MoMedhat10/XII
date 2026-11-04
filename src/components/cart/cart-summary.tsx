@@ -42,7 +42,7 @@ export function CartSummary({ subtotalCents }: { subtotalCents: number }) {
       <div className="flex flex-col gap-3 px-6 pt-5 pb-6">
         <button
           type="button"
-          onClick={() => toast("Checkout is coming soon")}
+          onClick={() => toast.info("Checkout is coming soon")}
           className={cn(
             button,
             "h-[60px] cursor-pointer justify-center border-foreground bg-gold text-white hover:bg-black"
@@ -52,7 +52,7 @@ export function CartSummary({ subtotalCents }: { subtotalCents: number }) {
         </button>
         <button
           type="button"
-          onClick={() => toast("Boutique viewings are coming soon")}
+          onClick={() => toast.info("Boutique viewings are coming soon")}
           className="h-[52px] cursor-pointer border-4 bg-background font-sans text-[13px] font-bold tracking-[1.5px] uppercase transition-colors hover:bg-foreground hover:text-black"
         >
           Book a boutique viewing

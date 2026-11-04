@@ -5,7 +5,7 @@ import "./globals.css"
 import { QueryProvider } from "@/components/query-provider"
 import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from "@/lib/utils"
-import { Toaster } from "sonner"
+import { Toaster } from "@/components/ui/sonner"
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -50,7 +50,7 @@ export default function RootLayout({
         <ThemeProvider>
           <QueryProvider>{children}</QueryProvider>
         </ThemeProvider>
-        <Toaster position="top-center" richColors />
+        <Toaster />
       </body>
     </html>
   )

@@ -16,7 +16,7 @@ export function useFavoriteToggle() {
 
   const toggle = (watchId: string) => {
     if (!favorites.data?.signedIn) {
-      toast("Sign in to save pieces to your vitrine", {
+      toast.info("Sign in to save pieces to your vitrine", {
         action: { label: "Sign in", onClick: () => router.push("/login") },
       })
       return
