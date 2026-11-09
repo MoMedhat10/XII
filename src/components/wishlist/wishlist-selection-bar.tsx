@@ -1,3 +1,7 @@
+import {
+  COMPARE_MAX,
+  COMPARE_MIN,
+} from "@/app/(app)/compare/_utils/compare-schema"
 import type { WishlistItem } from "@/app/(app)/wishlist/_data/types"
 import { cn } from "@/lib/utils"
 
@@ -72,9 +76,15 @@ export function WishlistSelectionBar({
             </button>
             <button
               type="button"
-              disabled={items.length < 2}
+              disabled={
+                items.length < COMPARE_MIN || items.length > COMPARE_MAX
+              }
               title={
-                items.length < 2 ? "Select at least 2 to compare" : undefined
+                items.length < COMPARE_MIN
+                  ? `Select at least ${COMPARE_MIN} to compare`
+                  : items.length > COMPARE_MAX
+                    ? `Compare up to ${COMPARE_MAX} pieces`
+                    : undefined
               }
               onClick={onCompare}
               className={cn(

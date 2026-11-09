@@ -1,5 +1,6 @@
 "use client"
 
+import type { CatalogWatch } from "@/app/(app)/watches/_data/types"
 import type { CatalogResults as Results } from "@/app/(app)/watches/_hooks/use-catalog-results"
 import { cn } from "@/lib/utils"
 
@@ -18,6 +19,8 @@ export function CatalogResults({
   query,
   isSaved,
   onToggleSave,
+  isCompared,
+  onToggleCompare,
   onRetry,
   onClearFilters,
 }: {
@@ -26,6 +29,8 @@ export function CatalogResults({
   query: string
   isSaved: (watchId: string) => boolean
   onToggleSave: (watchId: string) => void
+  isCompared: (watchId: string) => boolean
+  onToggleCompare: (watch: CatalogWatch) => void
   onRetry: () => void
   onClearFilters: () => void
 }) {
@@ -60,6 +65,8 @@ export function CatalogResults({
               index={i}
               saved={isSaved(w.id)}
               onToggleSave={() => onToggleSave(w.id)}
+              compared={isCompared(w.id)}
+              onToggleCompare={() => onToggleCompare(w)}
             />
           ))
         )}

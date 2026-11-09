@@ -28,12 +28,14 @@ function HeartIcon({ filled }: { filled: boolean }) {
 /**
  * The watch card used by the catalog and the home page's Curated Drop.
  * The whole card links to the watch; the heart only shows when
- * `onToggleSave` is passed.
+ * `onToggleSave` is passed, the Compare toggle when `onToggleCompare` is.
  */
 export function WatchCard({
   watch,
   saved = false,
   onToggleSave,
+  compared = false,
+  onToggleCompare,
   index,
   sizes = defaultSizes,
   className,
@@ -41,6 +43,8 @@ export function WatchCard({
   watch: CatalogWatch
   saved?: boolean
   onToggleSave?: () => void
+  compared?: boolean
+  onToggleCompare?: () => void
   /** position in its page, for the staggered entrance */
   index?: number
   sizes?: string
@@ -124,6 +128,29 @@ export function WatchCard({
             </dd>
           </div>
         </dl>
+
+        {onToggleCompare && (
+          <button
+            type="button"
+            role="checkbox"
+            aria-checked={compared}
+            aria-label={`Compare ${watch.name}`}
+            onClick={onToggleCompare}
+            // above the card's stretched link, so ticking doesn't navigate
+            className="relative z-10 flex cursor-pointer items-center gap-3 self-start font-sans text-xs font-bold tracking-[1.5px] uppercase"
+          >
+            <span
+              aria-hidden="true"
+              className={cn(
+                "flex size-5 items-center justify-center border-4 border-current text-[10px]",
+                compared && "border-gold bg-gold text-black"
+              )}
+            >
+              {compared && "✓"}
+            </span>
+            {compared ? "Comparing" : "Compare"}
+          </button>
+        )}
       </div>
     </article>
   )

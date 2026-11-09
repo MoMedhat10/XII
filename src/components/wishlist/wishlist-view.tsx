@@ -1,7 +1,8 @@
 "use client"
 
-import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 
+import { compareHref } from "@/app/(app)/compare/_utils/compare-schema"
 import type { WishlistPage } from "@/app/(app)/wishlist/_data/types"
 import { useWishlist } from "@/app/(app)/wishlist/_hooks/use-wishlist"
 import { sumCents } from "@/app/(app)/wishlist/_utils/wishlist-items"
@@ -19,6 +20,7 @@ import { WishlistTableHead } from "./wishlist-table-head"
 
 export function WishlistView(page: WishlistPage) {
   const w = useWishlist(page)
+  const router = useRouter()
 
   if (!w.items.length) return <WishlistEmpty />
   return (
@@ -58,7 +60,7 @@ export function WishlistView(page: WishlistPage) {
         disabled={w.pending}
         onClear={w.clearSelection}
         onRemove={() => w.remove(w.selected)}
-        onCompare={() => toast.success(`Comparing ${w.selItems.length} pieces`)}
+        onCompare={() => router.push(compareHref(w.selected))}
         onAddToBag={() => w.bag(w.selected)}
       />
     </>

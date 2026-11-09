@@ -7,7 +7,7 @@ import prisma from "../../../../../../lib/prisma"
 import { getPublicUrl } from "../../../../../../lib/storage"
 import type { WatchDetail } from "./types"
 
-const detailSelect = {
+export const detailSelect = {
   id: true,
   name: true,
   description: true,
@@ -25,7 +25,7 @@ const detailSelect = {
 
 type WatchDetailRow = Prisma.WatchGetPayload<{ select: typeof detailSelect }>
 
-const toWatchDetail = ({
+export const toWatchDetail = ({
   brand,
   images,
   ...w

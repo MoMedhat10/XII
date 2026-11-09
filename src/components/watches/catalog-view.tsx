@@ -1,5 +1,6 @@
 "use client"
 
+import { useCompareSelection } from "@/app/(app)/compare/_hooks/use-compare-selection"
 import { useCatalogFacets } from "@/app/(app)/watches/_hooks/use-catalog"
 import { useCatalogFilters } from "@/app/(app)/watches/_hooks/use-catalog-filters"
 import { useCatalogResults } from "@/app/(app)/watches/_hooks/use-catalog-results"
@@ -10,6 +11,7 @@ import {
 } from "@/app/(app)/watches/_utils/catalog-schema"
 import { cn } from "@/lib/utils"
 
+import { CompareTray } from "../compare/compare-tray"
 import { gutter } from "../home/styles"
 import { BrandFilter, PriceFilter } from "./catalog-filters"
 import { CatalogResults } from "./catalog-results"
@@ -29,6 +31,7 @@ export function CatalogView() {
     setPages: f.setPages,
   })
   const favorites = useFavoriteToggle()
+  const compare = useCompareSelection()
 
   const retry = () => {
     results.retry()
@@ -94,11 +97,26 @@ export function CatalogView() {
             query={f.filters.q}
             isSaved={favorites.isSaved}
             onToggleSave={favorites.toggle}
+            isCompared={compare.has}
+            onToggleCompare={(w) =>
+              compare.toggle({
+                id: w.id,
+                name: w.name,
+                brand: w.brand,
+                image: w.image,
+              })
+            }
             onRetry={retry}
             onClearFilters={f.clearAll}
           />
         </div>
       </section>
+
+      <CompareTray
+        items={compare.items}
+        onRemove={compare.remove}
+        onClear={compare.clear}
+      />
     </>
   )
 }
