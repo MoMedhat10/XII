@@ -4,7 +4,7 @@ import Link, { useLinkStatus } from "next/link"
 
 import { cn } from "@/lib/utils"
 
-import { monoCaption } from "../home/styles"
+import { monoCaption } from "./home/styles"
 
 function Label({ count }: { count: number }) {
   const { pending } = useLinkStatus()
@@ -15,7 +15,7 @@ function Label({ count }: { count: number }) {
  * A link to `?show=N`, so the server renders more rows. `replace` keeps each
  * step out of the back-button history; `scroll={false}` keeps the position.
  */
-export function WishlistShowMore({
+export function ShowMore({
   href,
   shown,
   total,

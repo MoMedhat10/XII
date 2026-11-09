@@ -10,11 +10,11 @@ import { formatCents } from "@/lib/money"
 import { cn } from "@/lib/utils"
 
 import { gutter } from "../home/styles"
+import { ShowMore } from "../show-more"
 import { WishlistEmpty } from "./wishlist-empty"
 import { WishlistHeader } from "./wishlist-header"
 import { WishlistRow } from "./wishlist-row"
 import { WishlistSelectionBar } from "./wishlist-selection-bar"
-import { WishlistShowMore } from "./wishlist-show-more"
 import { WishlistTableHead } from "./wishlist-table-head"
 
 export function WishlistView(page: WishlistPage) {
@@ -43,7 +43,7 @@ export function WishlistView(page: WishlistPage) {
         ))}
 
         {page.nextShow && (
-          <WishlistShowMore
+          <ShowMore
             href={`?show=${page.nextShow}`}
             shown={w.items.length}
             total={w.count}
