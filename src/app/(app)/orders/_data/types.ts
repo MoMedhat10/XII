@@ -55,4 +55,6 @@ export type OrderDetail = {
   totalCents: number
   items: OrderLine[]
   canCancel: boolean
+  /** null for orders placed before checkout stored an address */
+  shipping: { name: string; phone: string | null; lines: string[] } | null
 }

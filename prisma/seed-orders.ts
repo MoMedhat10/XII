@@ -12,6 +12,17 @@ const prisma = new PrismaClient({
 
 const DAY = 24 * 60 * 60 * 1000
 
+const SAMPLE_ADDRESS = {
+  shipName: "Sample Customer",
+  shipPhone: "+41225550100", // E.164, as checkout stores it
+  shipLine1: "12 Quai du Mont-Blanc",
+  shipLine2: null,
+  shipCity: "Geneva",
+  shipRegion: null,
+  shipPostalCode: "1201",
+  shipCountry: "CH",
+}
+
 // status, days ago, [watch index, quantity][]
 const PLAN: [OrderStatus, number, [number, number][]][] = [
   ["PAID", 1, [[0, 1]]],
@@ -96,6 +107,7 @@ async function main() {
             0
           ),
           createdAt: placedAt,
+          ...SAMPLE_ADDRESS,
           orderItems: {
             create: items.map((i) => ({ ...i, createdAt: placedAt })),
           },

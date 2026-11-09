@@ -12,12 +12,12 @@ const coverSelect = {
 } satisfies Prisma.Watch$imagesArgs
 
 // Only watches a customer can still buy reach the page.
-const buyableWatch = {
+export const buyableWatch = {
   isActive: true,
   stock: { gt: 0 },
 } satisfies Prisma.WatchWhereInput
 
-const lineSelect = {
+export const lineSelect = {
   quantity: true,
   watch: {
     select: {
@@ -45,7 +45,7 @@ const toImage = (images: { key: string; alt: string }[]): CartImage => {
 const movementLabel = (m: MovementType | null) =>
   m ? m[0] + m.slice(1).toLowerCase() : null
 
-function toCartLine({ quantity: stored, watch }: LineRow): CartLine {
+export function toCartLine({ quantity: stored, watch }: LineRow): CartLine {
   const max = Math.min(watch.stock, CART_MAX_PER_PIECE)
   // Stock can drop below what's in the bag; show what can actually be bought.
   const quantity = Math.min(stored, max)

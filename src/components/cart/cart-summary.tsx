@@ -1,5 +1,6 @@
 "use client"
 
+import { useTransition } from "react"
 import { toast } from "sonner"
 
 import { formatPrice } from "@/components/dashboard/watches/watch-utils"
@@ -7,8 +8,15 @@ import { cn } from "@/lib/utils"
 
 import { button, monoCaption } from "../home/styles"
 
-export function CartSummary({ subtotalCents }: { subtotalCents: number }) {
+export function CartSummary({
+  subtotalCents,
+  onCheckout,
+}: {
+  subtotalCents: number
+  onCheckout: () => Promise<void>
+}) {
   const subtotal = formatPrice(subtotalCents)
+  const [opening, startTransition] = useTransition()
 
   return (
     <aside className="w-full border-4 bg-[#141515] lg:sticky lg:top-8 lg:mt-7 lg:w-[380px] xl:w-[440px]">
@@ -42,13 +50,14 @@ export function CartSummary({ subtotalCents }: { subtotalCents: number }) {
       <div className="flex flex-col gap-3 px-6 pt-5 pb-6">
         <button
           type="button"
-          onClick={() => toast.info("Checkout is coming soon")}
+          disabled={opening}
+          onClick={() => startTransition(onCheckout)}
           className={cn(
             button,
-            "h-[60px] cursor-pointer justify-center border-foreground bg-gold text-white hover:bg-black"
+            "h-[60px] cursor-pointer justify-center border-foreground bg-gold text-white hover:bg-black disabled:opacity-70"
           )}
         >
-          Checkout →
+          {opening ? "Opening…" : "Checkout →"}
         </button>
         <button
           type="button"

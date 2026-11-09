@@ -17,12 +17,17 @@ export async function generateMetadata({
   }
 }
 
-export default async function OrderPage({ params }: PageProps<"/orders/[id]">) {
+export default async function OrderPage({
+  params,
+  searchParams,
+}: PageProps<"/orders/[id]">) {
   const user = await getCurrentUser()
   if (!user) redirect("/login")
 
   const order = await getOrderDetail((await params).id, user.id)
   if (!order) notFound()
 
-  return <OrderDetailView order={order} />
+  // set by checkout's redirect, for the thank-you banner
+  const placed = (await searchParams).placed === "1"
+  return <OrderDetailView order={order} placed={placed} />
 }

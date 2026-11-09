@@ -43,7 +43,7 @@ export async function cancelOrder(
       for (const { watchId, quantity } of items) {
         await tx.watch.update({
           where: { id: watchId },
-          data: { stock: { increment: quantity } },
+          data: { stock: { increment: quantity }, version: { increment: 1 } },
         })
       }
       return true

@@ -3,6 +3,8 @@ import { cache } from "react"
 import type { OrderStatus, Prisma } from "@/app/generated/prisma/client"
 import prisma from "../../../../../lib/prisma"
 import { getPublicUrl } from "../../../../../lib/storage"
+import { countryName } from "../../checkout/_utils/countries"
+import { formatPhoneDisplay } from "../../checkout/_utils/phone"
 import { formatOrderDate, orderRef } from "../_utils/order-format"
 import {
   ORDERS_MAX_SHOW,
@@ -115,6 +117,14 @@ export const getOrderDetail = cache(
         updatedAt: true,
         customerEmail: true,
         totalCents: true,
+        shipName: true,
+        shipPhone: true,
+        shipLine1: true,
+        shipLine2: true,
+        shipCity: true,
+        shipRegion: true,
+        shipPostalCode: true,
+        shipCountry: true,
         orderItems: {
           select: {
             id: true,
@@ -141,6 +151,20 @@ export const getOrderDetail = cache(
       customerEmail: order.customerEmail,
       totalCents: order.totalCents,
       canCancel: order.status === "PAID",
+      shipping: order.shipName
+        ? {
+            name: order.shipName,
+            phone: order.shipPhone && formatPhoneDisplay(order.shipPhone),
+            lines: [
+              order.shipLine1,
+              order.shipLine2,
+              [order.shipCity, order.shipRegion, order.shipPostalCode]
+                .filter(Boolean)
+                .join(", "),
+              order.shipCountry && countryName(order.shipCountry),
+            ].filter((l): l is string => Boolean(l)),
+          }
+        : null,
       items: order.orderItems.map((i) => ({
         id: i.id,
         watchId: i.watchId,

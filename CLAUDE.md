@@ -23,7 +23,7 @@ npx prisma studio
 
 There is no test framework set up yet.
 
-Environment variables (`.env`, loaded by `prisma.config.ts` via `dotenv/config`): `DATABASE_URL`, `REDIS_URL`, `RESEND_API_KEY`, `CRON_SECRET`, and optionally `LOG_LEVEL`.
+Environment variables (`.env`, loaded by `prisma.config.ts` via `dotenv/config`): `DATABASE_URL`, `REDIS_URL`, `RESEND_API_KEY`, `CRON_SECRET`, and optionally `LOG_LEVEL` and `APP_URL` (absolute site URL, used for links in order emails).
 
 ## Architecture
 

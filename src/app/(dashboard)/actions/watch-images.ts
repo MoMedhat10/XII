@@ -155,7 +155,7 @@ export async function deleteWatchImage(
       if (unpublished) {
         await tx.watch.update({
           where: { id: image.watchId },
-          data: { isActive: false },
+          data: { isActive: false, version: { increment: 1 } },
         })
       }
       return {

@@ -89,7 +89,11 @@ export async function updateWatch(
 
       await tx.watch.update({
         where: { id },
-        data: { ...fields, priceCents: parsePriceInput(price) * 100 },
+        data: {
+          ...fields,
+          priceCents: parsePriceInput(price) * 100,
+          version: { increment: 1 }, // see Watch.version
+        },
       })
 
       if (current.name !== fields.name) {
@@ -135,7 +139,10 @@ export async function setWatchActive(
       ) {
         throw new ActionError("Add at least one image before publishing.")
       }
-      await tx.watch.update({ where: { id }, data: { isActive } })
+      await tx.watch.update({
+        where: { id },
+        data: { isActive, version: { increment: 1 } },
+      })
     })
     revalidatePath(PATH)
     return {

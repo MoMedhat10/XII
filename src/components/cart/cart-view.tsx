@@ -1,5 +1,7 @@
 "use client"
 
+import { useRouter } from "next/navigation"
+
 import type { CartPage } from "@/app/(app)/cart/_data/types"
 import { useCart } from "@/app/(app)/cart/_hooks/use-cart"
 import { cn } from "@/lib/utils"
@@ -12,6 +14,13 @@ import { CartSummary } from "./cart-summary"
 
 export function CartView(page: CartPage) {
   const cart = useCart(page)
+  const router = useRouter()
+
+  // Save a quantity changed in the last few hundred ms before leaving.
+  const checkout = async () => {
+    await cart.flushQuantities()
+    router.push("/checkout")
+  }
 
   if (!cart.lines.length) {
     return (
@@ -41,7 +50,7 @@ export function CartView(page: CartPage) {
           ))}
         </div>
 
-        <CartSummary subtotalCents={cart.subtotalCents} />
+        <CartSummary subtotalCents={cart.subtotalCents} onCheckout={checkout} />
       </div>
     </section>
   )

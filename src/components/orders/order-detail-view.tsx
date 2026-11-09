@@ -13,11 +13,31 @@ import { OrderStatusTrack } from "./order-status-track"
 const summaryRow =
   "flex justify-between gap-4 border-b-2 border-surface-variant py-3"
 
-export function OrderDetailView({ order }: { order: OrderDetail }) {
+export function OrderDetailView({
+  order,
+  placed = false,
+}: {
+  order: OrderDetail
+  /** just placed at checkout: show the thank-you banner */
+  placed?: boolean
+}) {
   const total = formatPrice(order.totalCents)
 
   return (
     <section className={cn(gutter, "pt-20 pb-40 sm:pt-28")}>
+      {placed && (
+        <div
+          role="status"
+          className="mb-8 flex flex-wrap items-center gap-x-4 gap-y-1 border-4 border-gold bg-[#141515] px-5 py-4"
+        >
+          <span className="font-heading text-sm leading-6 font-bold tracking-[1.5px] text-gold uppercase">
+            Order placed — thank you
+          </span>
+          <span className="font-sans text-sm text-muted-foreground">
+            A confirmation is on its way to {order.customerEmail}.
+          </span>
+        </div>
+      )}
       <div className="flex flex-wrap items-end justify-between gap-6 border-b-4 pb-6 sm:pb-8">
         <div className="min-w-0">
           <span className={cn(eyebrow, "mb-2")}>
@@ -114,6 +134,29 @@ export function OrderDetailView({ order }: { order: OrderDetail }) {
               {total}
             </span>
           </div>
+
+          {order.shipping && (
+            <div className="mx-6 mt-6 border-2 border-surface-variant px-4 py-3">
+              <span className={cn(monoCaption, "mb-1 block uppercase")}>
+                Ship to
+              </span>
+              <address className="font-sans text-sm leading-5 not-italic">
+                <span className="block font-semibold">
+                  {order.shipping.name}
+                </span>
+                {order.shipping.lines.map((l, i) => (
+                  <span key={i} className="block">
+                    {l}
+                  </span>
+                ))}
+                {order.shipping.phone && (
+                  <span className="mt-1 block text-muted-foreground">
+                    {order.shipping.phone}
+                  </span>
+                )}
+              </address>
+            </div>
+          )}
 
           <div className="flex flex-col gap-3 px-6 pt-5 pb-6">
             {order.canCancel && (
