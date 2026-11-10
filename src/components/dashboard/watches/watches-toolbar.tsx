@@ -1,11 +1,11 @@
 "use client"
 
-import type { AdminBrand } from "@/app/(dashboard)/_data/types"
+import type { AdminBrand } from "@/app/(dashboard)/dashboard/watches/_data/types"
 import {
   WATCH_STATUS_FILTERS,
   type WatchFilters,
   type WatchStatusFilter,
-} from "@/app/(dashboard)/_utils/watch-schema"
+} from "@/app/(dashboard)/dashboard/watches/_utils/watch-schema"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 

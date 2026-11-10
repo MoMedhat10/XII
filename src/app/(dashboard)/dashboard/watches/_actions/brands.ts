@@ -1,15 +1,14 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
 import { Prisma } from "@/app/generated/prisma/client"
-import prisma from "../../../../lib/prisma"
-import { logger } from "../../../../lib/pino"
+import prisma from "../../../../../../lib/prisma"
+import { logger } from "../../../../../../lib/pino"
 import {
   createPresignedPut,
   deleteObjects,
   moveObject,
-} from "../../../../lib/storage"
-import { requireAdmin } from "../_server/require-admin"
+} from "../../../../../../lib/storage"
+import { requireAdmin } from "../../../_server/require-admin"
 import { verifyUploadedImage } from "../_server/verify-upload"
 import {
   BRAND_LOGO_EXT,
@@ -25,7 +24,7 @@ import {
 } from "../_utils/brand-schema"
 import { brandSelect, toAdminBrand } from "../_data/brands"
 import type { AdminBrand } from "../_data/types"
-import { fail, parseFail, type ActionRes } from "../_utils/action-result"
+import { fail, parseFail, type ActionRes } from "../../../_utils/action-result"
 
 async function promoteLogo(tmpKey: string) {
   const ok = await verifyUploadedImage(tmpKey, {
@@ -90,7 +89,6 @@ export async function createBrand(
       data: { name, description, logoKey },
       select: brandSelect,
     })
-    revalidatePath("/dashboard/watches")
     return {
       success: true,
       message: "Brand created",
@@ -132,7 +130,6 @@ export async function updateBrand(
     })
     // DB is updated, so the old file is now unreferenced and safe to delete
     if (current.logoKey !== logoKey) await removeObject(current.logoKey)
-    revalidatePath("/dashboard/watches")
     return {
       success: true,
       message: "Brand updated",
@@ -157,7 +154,6 @@ export async function deleteBrand(id: string): Promise<ActionRes<null>> {
   try {
     await prisma.brand.delete({ where: { id } }) // FK Restrict still guards a race
     await removeObject(brand.logoKey)
-    revalidatePath("/dashboard/watches")
     return { success: true, message: "Brand deleted", data: null }
   } catch (error) {
     return prismaFail(error, "deleteBrand")

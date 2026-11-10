@@ -165,10 +165,10 @@ export function WatchesLoading() {
           style={{ animationDelay: `${i * 150}ms` }}
           className={cn(
             tableColumns,
-            "grid animate-[xii-pulse_1.4s_ease-in-out_infinite] grid-cols-[minmax(0,1fr)_auto] gap-4 border-b-2 border-surface-variant py-[18px] lg:items-center"
+            "grid animate-[xii-pulse_1.4s_ease-in-out_infinite] grid-cols-[minmax(0,1fr)_auto] gap-4 border-b-2 border-surface-variant py-[18px] xl:items-center"
           )}
         >
-          <div className="col-span-2 row-start-3 flex gap-1.5 lg:col-span-1 lg:row-start-auto">
+          <div className="col-span-2 row-start-3 flex gap-1.5 xl:col-span-1 xl:row-start-auto">
             <div className={cn(sk, "size-12")} />
             <div className={cn(sk, "size-12")} />
             <div className="size-12 border-2 border-dashed border-surface-variant" />
@@ -177,13 +177,13 @@ export function WatchesLoading() {
             <div className={cn(sk, "h-[18px] w-[70%]")} />
             <div className={cn(sk, "h-2.5 w-[40%]")} />
           </div>
-          <div className={cn(sk, "hidden h-3 w-[65%] lg:block")} />
-          <div className="col-span-2 row-start-2 flex items-center justify-between lg:contents">
-            <div className={cn(sk, "h-4 w-20 lg:justify-self-end")} />
-            <div className={cn(sk, "h-3.5 w-[34px] lg:justify-self-end")} />
+          <div className={cn(sk, "hidden h-3 w-[65%] xl:block")} />
+          <div className="col-span-2 row-start-2 flex items-center justify-between xl:contents">
+            <div className={cn(sk, "h-4 w-20 xl:justify-self-end")} />
+            <div className={cn(sk, "h-3.5 w-[34px] xl:justify-self-end")} />
             <div className="h-7 w-[52px] border-2 border-surface-variant" />
           </div>
-          <div className="col-start-2 row-start-1 size-11 justify-self-end border-2 border-surface-variant lg:col-start-auto lg:row-start-auto" />
+          <div className="col-start-2 row-start-1 size-11 justify-self-end border-2 border-surface-variant xl:col-start-auto xl:row-start-auto" />
         </div>
       ))}
       <div className="flex flex-wrap items-center justify-between gap-4 pt-7">

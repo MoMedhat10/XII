@@ -4,12 +4,12 @@
 import type {
   AdminWatch,
   AdminWatchImage,
-} from "@/app/(dashboard)/_data/types"
-import { MAX_WATCH_IMAGES } from "@/app/(dashboard)/_utils/upload-rules"
+} from "@/app/(dashboard)/dashboard/watches/_data/types"
+import { MAX_WATCH_IMAGES } from "@/app/(dashboard)/dashboard/watches/_utils/upload-rules"
 import { cn } from "@/lib/utils"
 
 const tileBtn =
-  "absolute flex items-center justify-center bg-[#141515] font-heading font-bold text-foreground transition-colors hover:bg-gold hover:text-black disabled:pointer-events-none"
+  "absolute flex items-center justify-center bg-[#141515] font-heading font-bold text-foreground transition-colors hover:text-black disabled:pointer-events-none"
 
 export function WatchRowImages({
   watch,
@@ -74,7 +74,7 @@ export function WatchRowImages({
                   aria-label={`Delete image ${index + 1} of ${watch.name}`}
                   className={cn(
                     tileBtn,
-                    "-top-0.5 -right-0.5 size-[18px] text-[10px]"
+                    "-top-0.5 -right-0.5 size-[18px] text-[10px] hover:bg-danger"
                   )}
                 >
                   ✕
@@ -89,7 +89,7 @@ export function WatchRowImages({
                     title="Set as cover"
                     className={cn(
                       tileBtn,
-                      "bottom-0 left-0 h-3 px-[3px] text-[8px] leading-3 tracking-[0.5px] opacity-0 group-hover/img:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
+                      "bottom-0 left-0 h-3 px-[3px] text-[8px] leading-3 tracking-[0.5px] opacity-0 group-hover/img:opacity-100 hover:bg-gold focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
                     )}
                   >
                     COVER

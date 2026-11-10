@@ -8,7 +8,15 @@ import { toast } from "sonner"
 import { logout } from "@/app/(auth)/_actions"
 import { cn } from "@/lib/utils"
 
-export function LogoutButton({ className }: { className?: string }) {
+export function LogoutButton({
+  className,
+  children = "Logout",
+  title,
+}: {
+  className?: string
+  children?: React.ReactNode
+  title?: string
+}) {
   const router = useRouter()
   const queryClient = useQueryClient()
   const [pending, startTransition] = useTransition()
@@ -34,9 +42,10 @@ export function LogoutButton({ className }: { className?: string }) {
       type="button"
       onClick={handleLogout}
       disabled={pending}
+      title={title}
       className={cn(className, "cursor-pointer disabled:opacity-50")}
     >
-      Logout
+      {children}
     </button>
   )
 }

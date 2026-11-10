@@ -1,15 +1,14 @@
 import "server-only"
 import { Prisma } from "@/app/generated/prisma/client"
-import { logger } from "../../../../lib/pino"
-import { deleteObjects, moveObject } from "../../../../lib/storage"
+import { logger } from "../../../../../../lib/pino"
+import { deleteObjects, moveObject } from "../../../../../../lib/storage"
 import { verifyUploadedImage } from "./verify-upload"
 import {
   MAX_WATCH_IMAGE_BYTES,
   WATCH_IMAGE_TYPES,
 } from "../_utils/upload-rules"
-import { fail } from "../_utils/action-result"
+import { fail } from "../../../_utils/action-result"
 
-export const PATH = "/dashboard/watches"
 export const WATCH_GONE = "This watch no longer exists."
 export const IMAGES_CHANGED = "Images changed, please refresh and try again."
 export const HAS_ORDERS =

@@ -131,6 +131,7 @@ The palette is monochromatic and structural, with Luxury Gold reserved for momen
 - **Neutral White (#FFFFFF):** The primary canvas, maximizing negative space.
 - **Concrete (#D9D9D9) & Steel (#A5A5A5):** Used for background sections and secondary UI elements to provide an industrial, architectural contrast.
 - **Luxury Gold (#B08D57):** Reserved for accenting exclusivity—price tags, "Authentic" badges, or active states in navigation.
+- **Danger red (admin only, `--danger`: #ff5449 dark / #ba1a1a light):** Marks destructive actions (delete) and validation errors in the admin dashboard. Gold is never used for these: gold means "go ahead".
 
 Never use gradients or transparency. Color should be applied in solid, flat blocks to maintain the brutalist integrity of the design system.
 

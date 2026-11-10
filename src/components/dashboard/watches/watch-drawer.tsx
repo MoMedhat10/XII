@@ -5,12 +5,15 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Controller, useForm, useWatch } from "react-hook-form"
 import { toast } from "sonner"
 
-import type { AdminBrand, AdminWatch } from "@/app/(dashboard)/_data/types"
+import type {
+  AdminBrand,
+  AdminWatch,
+} from "@/app/(dashboard)/dashboard/watches/_data/types"
 import {
   formatPriceInput,
   watchFormSchema,
   type WatchFormInput,
-} from "@/app/(dashboard)/_utils/watch-schema"
+} from "@/app/(dashboard)/dashboard/watches/_utils/watch-schema"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -33,13 +36,13 @@ import {
   fieldError,
   fieldLabel,
   portalTheme,
-  textLink,
+  textLinkDanger,
 } from "./watch-utils"
-import { MAX_STOCK } from "@/app/(dashboard)/_utils/upload-rules"
+import { MAX_STOCK } from "@/app/(dashboard)/dashboard/watches/_utils/upload-rules"
 import type {
   ServerError,
   WatchDrawerState,
-} from "@/app/(dashboard)/_hooks/types"
+} from "@/app/(dashboard)/dashboard/watches/_hooks/types"
 
 const FORM_FIELDS: Record<keyof WatchFormInput, true> = {
   name: true,
@@ -315,7 +318,7 @@ function WatchForm({
             <div
               className={cn(
                 "flex h-12 border-2 border-foreground bg-[#141515] focus-within:border-gold",
-                errors.price && "border-gold"
+                errors.price && "border-danger focus-within:border-danger"
               )}
             >
               <span
@@ -360,7 +363,12 @@ function WatchForm({
                 const step =
                   "w-12 shrink-0 bg-[#141515] font-heading text-lg font-bold transition-colors hover:bg-foreground hover:text-black disabled:opacity-35"
                 return (
-                  <div className="flex h-12 border-2 border-foreground focus-within:border-gold">
+                  <div
+                    className={cn(
+                      "flex h-12 border-2 border-foreground focus-within:border-gold",
+                      errors.stock && "border-danger focus-within:border-danger"
+                    )}
+                  >
                     <button
                       type="button"
                       aria-label="Decrease stock"
@@ -419,7 +427,7 @@ function WatchForm({
           <button
             type="button"
             onClick={() => onDelete(state.watch)}
-            className={textLink}
+            className={textLinkDanger}
           >
             Delete reference
           </button>

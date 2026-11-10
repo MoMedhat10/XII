@@ -1,20 +1,18 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
-import prisma from "../../../../lib/prisma"
-import { requireAdmin } from "../_server/require-admin"
+import prisma from "../../../../../../lib/prisma"
+import { requireAdmin } from "../../../_server/require-admin"
 import {
   ActionError,
   IMAGES_CHANGED,
-  PATH,
   WATCH_GONE,
   actionFail,
   lockWatch,
   promoteImages,
   removeObjects,
 } from "../_server/watch-tx"
-import { fail, type ActionRes } from "../_utils/action-result"
-import { createPresignedPut } from "../../../../lib/storage"
+import { fail, type ActionRes } from "../../../_utils/action-result"
+import { createPresignedPut } from "../../../../../../lib/storage"
 import { MAX_WATCH_IMAGES, WATCH_IMAGE_EXT } from "../_utils/upload-rules"
 import {
   addWatchImagesSchema,
@@ -99,7 +97,6 @@ export async function addWatchImages(
   }
 
   // committed: from here on the files belong to saved rows, so never delete them
-  revalidatePath(PATH)
   const count = images.length
   try {
     return {
@@ -166,7 +163,6 @@ export async function deleteWatchImage(
     })
 
     await removeObjects([result.key])
-    revalidatePath(PATH)
     return {
       success: true,
       message: result.unpublished
@@ -214,7 +210,6 @@ export async function reorderWatchImages(
         await tx.watchImage.update({ where: { id }, data: { sortOrder: i } })
       }
     })
-    revalidatePath(PATH)
     return {
       success: true,
       message: "Cover updated",

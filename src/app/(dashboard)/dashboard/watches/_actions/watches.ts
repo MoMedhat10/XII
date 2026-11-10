@@ -1,18 +1,16 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
-import prisma from "../../../../lib/prisma"
-import { requireAdmin } from "../_server/require-admin"
+import prisma from "../../../../../../lib/prisma"
+import { requireAdmin } from "../../../_server/require-admin"
 import {
   ActionError,
   HAS_ORDERS,
-  PATH,
   WATCH_GONE,
   actionFail,
   lockWatch,
   removeObjects,
 } from "../_server/watch-tx"
-import { fail, parseFail, type ActionRes } from "../_utils/action-result"
+import { fail, parseFail, type ActionRes } from "../../../_utils/action-result"
 import {
   createWatchSchema,
   EDITABLE_WATCH_FIELDS,
@@ -42,7 +40,6 @@ export async function createWatch(
       data: { ...fields, priceCents: parsePriceInput(price) * 100 },
       select: watchSelect,
     })
-    revalidatePath(PATH)
     return {
       success: true,
       message: "Draft created",
@@ -112,7 +109,6 @@ export async function updateWatch(
 
       return tx.watch.findUniqueOrThrow({ where: { id }, select: watchSelect })
     })
-    revalidatePath(PATH)
     return { success: true, message: "Saved", data: toAdminWatch(watch) }
   } catch (error) {
     return actionFail(error, "updateWatch", {
@@ -144,7 +140,6 @@ export async function setWatchActive(
         data: { isActive, version: { increment: 1 } },
       })
     })
-    revalidatePath(PATH)
     return {
       success: true,
       message: isActive ? "Live" : "Hidden",
@@ -182,7 +177,6 @@ export async function deleteWatch(
 
     // the rows are gone, so the files are unreferenced and safe to delete
     await removeObjects(deleted.images.map((image) => image.key))
-    revalidatePath(PATH)
     return {
       success: true,
       message: "Deleted",

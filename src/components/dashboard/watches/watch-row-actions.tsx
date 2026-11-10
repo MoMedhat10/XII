@@ -1,6 +1,6 @@
 "use client"
 
-import type { AdminWatch } from "@/app/(dashboard)/_data/types"
+import type { AdminWatch } from "@/app/(dashboard)/dashboard/watches/_data/types"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,7 +55,7 @@ export function WatchRowActions({
           onSelect={() => onDelete(watch)}
           className={cn(
             item,
-            "text-gold focus:bg-gold focus:text-black not-data-[variant=destructive]:focus:**:text-black"
+            "text-danger focus:bg-danger focus:text-black not-data-[variant=destructive]:focus:**:text-black"
           )}
         >
           <span>Delete</span>

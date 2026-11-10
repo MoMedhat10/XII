@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- logos are blob: URLs from local uploads */
 "use client"
 
-import type { AdminBrand } from "@/app/(dashboard)/_data/types"
+import type { AdminBrand } from "@/app/(dashboard)/dashboard/watches/_data/types"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -115,7 +115,7 @@ export function BrandsDrawer({
             </li>
           )}
           {brands.map((brand) => {
-            const count = brand.watchCount;
+            const count = brand.watchCount
             return (
               <li
                 key={brand.id}
@@ -152,7 +152,10 @@ export function BrandsDrawer({
                     <button
                       type="button"
                       onClick={() => onDeleteBrand(brand)}
-                      className={cn(rowLink, "text-muted-foreground")}
+                      className={cn(
+                        rowLink,
+                        "border-danger/40 text-danger hover:border-danger hover:text-danger"
+                      )}
                     >
                       Delete
                     </button>

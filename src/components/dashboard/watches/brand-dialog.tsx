@@ -5,12 +5,12 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Controller, useForm } from "react-hook-form"
 import { toast } from "sonner"
 
-import type { AdminBrand } from "@/app/(dashboard)/_data/types"
+import type { AdminBrand } from "@/app/(dashboard)/dashboard/watches/_data/types"
 import {
   brandLogoFileSchema,
   createBrandFormSchema,
   type BrandFormInput,
-} from "@/app/(dashboard)/_utils/brand-schema"
+} from "@/app/(dashboard)/dashboard/watches/_utils/brand-schema"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -35,11 +35,11 @@ import {
   fieldLabel,
   portalTheme,
 } from "./watch-utils"
-import { BRAND_LOGO_TYPES } from "@/app/(dashboard)/_utils/upload-rules"
+import { BRAND_LOGO_TYPES } from "@/app/(dashboard)/dashboard/watches/_utils/upload-rules"
 import type {
   BrandDialogState,
   ServerError,
-} from "@/app/(dashboard)/_hooks/types"
+} from "@/app/(dashboard)/dashboard/watches/_hooks/types"
 
 export function BrandDialog({
   open,
@@ -188,7 +188,7 @@ function BrandForm({
                 }
                 className={cn(
                   "circle flex size-24 shrink-0 items-center justify-center overflow-hidden border-[3px] border-dashed border-gold bg-[#141515] font-heading text-[11px] font-bold tracking-[1px] text-gold transition-colors hover:border-foreground hover:text-foreground",
-                  fieldState.error && "border-destructive text-destructive"
+                  fieldState.error && "border-danger text-danger"
                 )}
               >
                 {field.value ? (

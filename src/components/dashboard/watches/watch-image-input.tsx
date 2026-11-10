@@ -2,7 +2,7 @@
 
 import type { Ref } from "react"
 
-import { WATCH_IMAGE_TYPES } from "@/app/(dashboard)/_utils/upload-rules"
+import { WATCH_IMAGE_TYPES } from "@/app/(dashboard)/dashboard/watches/_utils/upload-rules"
 
 export function WatchImageInput({
   ref,

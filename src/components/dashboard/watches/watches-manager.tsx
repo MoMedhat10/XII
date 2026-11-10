@@ -1,13 +1,11 @@
 "use client"
 
-import type { AdminBrand, AdminWatchPage } from "@/app/(dashboard)/_data/types"
-import { useBrands } from "@/app/(dashboard)/_hooks/use-brands"
-import { useDeleteConfirm } from "@/app/(dashboard)/_hooks/use-delete-confirm"
-import { useWatchDrawer } from "@/app/(dashboard)/_hooks/use-watch-drawer"
-import { useWatchFilters } from "@/app/(dashboard)/_hooks/use-watch-filters"
-import { useWatchImages } from "@/app/(dashboard)/_hooks/use-watch-images"
-import { useWatchList } from "@/app/(dashboard)/_hooks/use-watch-list"
-import type { WatchFilters } from "@/app/(dashboard)/_utils/watch-schema"
+import { useBrands } from "@/app/(dashboard)/dashboard/watches/_hooks/use-brands"
+import { useDeleteConfirm } from "@/app/(dashboard)/dashboard/watches/_hooks/use-delete-confirm"
+import { useWatchDrawer } from "@/app/(dashboard)/dashboard/watches/_hooks/use-watch-drawer"
+import { useWatchFilters } from "@/app/(dashboard)/dashboard/watches/_hooks/use-watch-filters"
+import { useWatchImages } from "@/app/(dashboard)/dashboard/watches/_hooks/use-watch-images"
+import { useWatchList } from "@/app/(dashboard)/dashboard/watches/_hooks/use-watch-list"
 import { cn } from "@/lib/utils"
 
 import { BrandDialog } from "./brand-dialog"
@@ -17,22 +15,24 @@ import { WatchDrawer } from "./watch-drawer"
 import { WatchImageInput } from "./watch-image-input"
 import { WatchesHeader } from "./watches-header"
 import { WatchesPagination } from "./watches-pagination"
-import { WatchesEmpty, WatchesNoResults } from "./watches-states"
+import {
+  WatchesEmpty,
+  WatchesError,
+  WatchesLoading,
+  WatchesNoResults,
+} from "./watches-states"
 import { WatchesTable, type WatchRowHandlers } from "./watches-table"
 import { WatchesToolbar } from "./watches-toolbar"
 
-export function WatchesManager({
-  data,
-  brands: serverBrands,
-  filters: serverFilters,
-}: {
-  data: AdminWatchPage
-  brands: AdminBrand[]
-  filters: WatchFilters
-}) {
-  const list = useWatchList({ data, brands: serverBrands })
-  const filters = useWatchFilters({ serverFilters })
-  const watch = useWatchDrawer({ list })
+/**
+ * The admin watches page. All data comes from the TanStack Query cache: the
+ * server page prefetches the first screen into it, and from then on filters,
+ * pages and writes go through queries and mutations.
+ */
+export function WatchesManager() {
+  const filters = useWatchFilters()
+  const list = useWatchList({ filters })
+  const watch = useWatchDrawer()
 
   const { setFileInput, ...images } = useWatchImages({ list })
   const brands = useBrands({ filters })
@@ -57,11 +57,28 @@ export function WatchesManager({
     onSetCover: images.setCover,
   }
 
+  const { data } = list
+
+  // Only without any rows to show: the first load failed, or is still going
+  // (the server prefetch normally fills the cache, so this is rare).
+  if (!data) {
+    return (
+      <>
+        <WatchesHeader total={null} brandCount={null} disabled />
+        {list.pageQuery.isError ? (
+          <WatchesError onRetry={() => void list.pageQuery.refetch()} />
+        ) : (
+          <WatchesLoading />
+        )}
+      </>
+    )
+  }
+
   return (
     <>
       <WatchesHeader
         total={data.inventoryTotal}
-        brandCount={list.brands.length}
+        brandCount={list.brandsQuery.data ? list.brands.length : null}
         onOpenBrands={() => brands.setDrawerOpen(true)}
         onNewWatch={openNewWatch}
       />
@@ -86,10 +103,10 @@ export function WatchesManager({
             onClear={filters.clearFilters}
           />
           <div
-            aria-busy={filters.navigating || undefined}
+            aria-busy={list.stale || undefined}
             className={cn(
               "transition-opacity",
-              filters.navigating && "pointer-events-none opacity-50"
+              list.stale && "pointer-events-none opacity-50"
             )}
           >
             {data.total === 0 ? (

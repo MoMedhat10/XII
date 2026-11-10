@@ -4,7 +4,7 @@ import type {
   AdminBrand,
   AdminWatch,
   AdminWatchImage,
-} from "@/app/(dashboard)/_data/types"
+} from "@/app/(dashboard)/dashboard/watches/_data/types"
 import { cn } from "@/lib/utils"
 
 import { LiveToggle } from "./live-toggle"
@@ -13,7 +13,7 @@ import { WatchRowImages } from "./watch-row-images"
 import { brandNameFor, formatPrice, pad } from "./watch-utils"
 
 export const tableColumns =
-  "lg:grid lg:grid-cols-[minmax(180px,1.5fr)_minmax(0,2fr)_minmax(0,1fr)_110px_90px_70px_56px] lg:gap-5"
+  "xl:grid xl:grid-cols-[minmax(180px,1.5fr)_minmax(0,2fr)_minmax(0,1fr)_110px_90px_70px_56px] xl:gap-5"
 
 export type WatchRowHandlers = {
   onOpen: (watch: AdminWatch) => void
@@ -87,7 +87,7 @@ export function WatchesTable({
             onClick={() => handlers.onOpen(watch)}
             className={cn(
               tableColumns,
-              "group/row cursor-pointer border-b-2 border-surface-variant py-[18px] transition-colors hover:bg-[#202222] lg:items-center",
+              "group/row cursor-pointer border-b-2 border-surface-variant py-[18px] transition-colors hover:bg-[#202222] xl:items-center",
               // Mobile / tablet: stacked card layout.
               "grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-4"
             )}
@@ -95,7 +95,7 @@ export function WatchesTable({
             {/* Images: last row on mobile, first column on desktop */}
             <div
               onClick={stop}
-              className="col-span-2 row-start-3 cursor-default lg:col-span-1 lg:row-start-auto"
+              className="col-span-2 row-start-3 cursor-default xl:col-span-1 xl:row-start-auto"
             >
               <WatchRowImages
                 watch={watch}
@@ -119,21 +119,21 @@ export function WatchesTable({
               </button>
               <span className="truncate font-mono text-[13px] text-muted-foreground">
                 {watch.model || "—"}
-                <span className="lg:hidden"> · {brand}</span>
+                <span className="xl:hidden"> · {brand}</span>
               </span>
             </div>
 
-            <span className="hidden truncate text-sm font-medium tracking-[0.08em] uppercase lg:block">
+            <span className="hidden truncate text-sm font-medium tracking-[0.08em] uppercase xl:block">
               {brand}
             </span>
 
             {/* Mobile: price + stock + live share one row */}
-            <div className="col-span-2 row-start-2 flex items-center justify-between gap-4 lg:contents">
-              <span className="font-heading text-lg font-bold text-gold lg:text-right">
+            <div className="col-span-2 row-start-2 flex items-center justify-between gap-4 xl:contents">
+              <span className="font-heading text-lg font-bold text-gold xl:text-right">
                 {formatPrice(watch.priceCents)}
               </span>
-              <span className="flex items-center gap-2 lg:block lg:text-right">
-                <span className="font-mono text-[11px] tracking-[1px] text-muted-foreground uppercase lg:hidden">
+              <span className="flex items-center gap-2 xl:block xl:text-right">
+                <span className="font-mono text-[11px] tracking-[1px] text-muted-foreground uppercase xl:hidden">
                   Stock
                 </span>
                 <StockLabel stock={watch.stock} />
@@ -150,7 +150,7 @@ export function WatchesTable({
 
             <div
               onClick={stop}
-              className="col-start-2 row-start-1 flex cursor-default justify-end lg:col-start-auto lg:row-start-auto"
+              className="col-start-2 row-start-1 flex cursor-default justify-end xl:col-start-auto xl:row-start-auto"
             >
               <WatchRowActions
                 watch={watch}

@@ -37,7 +37,7 @@ Environment variables (`.env`, loaded by `prisma.config.ts` via `dotenv/config`)
 
 The `@/*` alias maps to `src/*`, so these files are imported by relative path (e.g. `../../../../lib/prisma`). `src/lib/utils.ts` (`cn`) is the shadcn utility.
 
-`lib/prisma.ts` imports `server-only`, so importing it from a client component fails the build. Server Components and actions must never pass raw Prisma rows to Client Components: map them to plain DTOs (see `src/app/(dashboard)/_data/watches.ts`, with the DTO types in `_data/types.ts`) and use `publicUserSelect` / `PublicUser` from `_utils/session.ts` for user data, which keeps `passwordHash` out of `getCurrentUser()`.
+`lib/prisma.ts` imports `server-only`, so importing it from a client component fails the build. Server Components and actions must never pass raw Prisma rows to Client Components: map them to plain DTOs (see `src/app/(dashboard)/dashboard/watches/_data/watches.ts`, with the DTO types in `_data/types.ts`) and use `publicUserSelect` / `PublicUser` from `_utils/session.ts` for user data, which keeps `passwordHash` out of `getCurrentUser()`.
 
 **Data conventions:** money is stored as integer USD cents (`priceCents`, `totalCents`, `unitPriceCents`; format with `formatCents` in `src/lib/money.ts`). `User.email` and `User.username` are `citext` columns, so uniqueness is case-insensitive, and emails are trimmed and lowercased by the zod schemas. Orders outlive their user (`Order.userId` is `SetNull`, with `customerEmail` as a snapshot). Each `OrderItem` also snapshots the watch (`watchName`, `watchModel`, `brandName`, `imageKey`): checkout must fill them with `snapshotWatchForOrder` from `lib/order-snapshot.ts`, which copies the cover to `orders/`. A watch with order items can't be deleted (`OrderItem.watch` is Restrict).
 
@@ -57,6 +57,15 @@ How it works:
   - `rateLimitOrThrow` **fails closed**. It throws `ServiceUnavailableError` if Redis is down, and the action surfaces that error's message.
   - `rateLimit` wrapped in its own try/catch **fails open**. Login uses this so a Redis outage doesn't lock users out.
 - **Cron**: `(auth)/api/cron/cleanup/route.ts` deletes expired verification codes (hourly), and `(dashboard)/api/cron/storage-cleanup/route.ts` deletes `tmp/` uploads older than 24 h (daily). Both are scheduled in `vercel.json` and require `Authorization: Bearer $CRON_SECRET`, checked by `isCronAuthorized` in `lib/cron-auth.ts`.
+
+### Admin data (`src/app/(dashboard)/`)
+**Layout:** each admin route keeps its code in its own private folders (`dashboard/watches/_actions`, `_data`, `_hooks`, `_server`, `_utils`), like the storefront. Only `_server/require-admin.ts` and `_utils/action-result.ts` are shared at the group level. API handlers stay as thin files in `(dashboard)/api/` that call the route's `_data`, because Next.js never routes anything inside a `_` folder.
+
+The admin pages run on TanStack Query, not `revalidatePath`:
+- **Reads** go through GET route handlers in `(dashboard)/api/admin/*`, guarded by `adminApiGuard()` (returns 401/403 JSON; `requireAdmin()` is for pages and actions). Query keys live in `_utils/admin-keys.ts`, and query options in `_hooks/admin-queries.ts`.
+- **First paint**: the server page prefetches under the same keys and wraps the client in `HydrationBoundary`.
+- **Writes** are still server actions, wrapped in `useMutation` in `_hooks/admin-mutations.ts` (`unwrap()` turns `{ success: false }` into a thrown `ActionFailure`). After a write, invalidate the affected keys. Admin actions must not call `revalidatePath`.
+- **Filters** live in the URL and are updated with `window.history.replaceState` (no server render). Upload progress tiles are local state, not cache.
 
 ## UI conventions
 - The UI uses shadcn/ui (style `radix-lyra`, built on the `radix-ui` package). Primitives are in `src/components/ui/`, and new ones are added via the shadcn CLI per `components.json`. Theming uses `next-themes`, and toasts use `sonner`.

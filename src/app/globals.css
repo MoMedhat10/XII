@@ -39,6 +39,8 @@
     --color-foreground: var(--foreground);
     --color-background: var(--background);
     --color-gold: var(--gold);
+    /* admin-only: destructive actions and validation errors */
+    --color-danger: var(--danger);
     --color-gold-foreground: var(--gold-foreground);
     --color-steel: var(--steel);
     --color-concrete: var(--concrete);
@@ -127,6 +129,7 @@
     --accent: #f3f3f4;
     --accent-foreground: #1a1c1c;
     --destructive: #ba1a1a;
+    --danger: #ba1a1a;
     --border: #000000;
     --input: #000000;
     --ring: #000000;
@@ -170,6 +173,7 @@
     --accent: #2f3131;
     --accent-foreground: #ffffff;
     --destructive: #ffdad6;
+    --danger: #ff5449;
     --border: #ffffff;
     --input: #ffffff;
     --ring: #ffffff;

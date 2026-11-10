@@ -1,6 +1,6 @@
 "use client"
 
-import { startTransition, useState } from "react"
+import { useState } from "react"
 import { toast } from "sonner"
 
 import type { DeleteTarget } from "./types"
@@ -11,10 +11,10 @@ import { watchImageFileSchema } from "../_utils/watch-schema"
 import { uploadWatchImage } from "../_utils/watch-upload"
 import { errorMessage } from "../_utils/watches-client"
 import {
-  addWatchImages,
-  deleteWatchImage,
-  reorderWatchImages,
-} from "../actions/watch-images"
+  useAddWatchImages,
+  useDeleteWatchImage,
+  useSetCover,
+} from "./admin-mutations"
 import type { WatchList } from "./use-watch-list"
 
 type ImageTarget = Extract<DeleteTarget, { kind: "image" }>
@@ -25,6 +25,10 @@ export function useWatchImages({ list }: { list: WatchList }) {
   /** the hidden file input shared by every row's "+" tile (set by a callback ref) */
   const [fileInput, setFileInput] = useState<HTMLInputElement | null>(null)
   const [uploadTarget, setUploadTarget] = useState<string | null>(null)
+
+  const addImages = useAddWatchImages()
+  const cover = useSetCover()
+  const deleteImage = useDeleteWatchImage()
 
   const pick = (watch: AdminWatch) => {
     if (list.imageBusyIds.has(watch.id)) return
@@ -68,7 +72,7 @@ export function useWatchImages({ list }: { list: WatchList }) {
     const tileIds = new Set(drafts.map((d) => d.image.id))
     const finish = () => {
       list.dropUploads(watchId, tileIds)
-      list.setImageBusy(watchId, false)
+      list.setUploading(watchId, false)
       drafts.forEach((d) => URL.revokeObjectURL(d.image.url))
     }
 
@@ -76,7 +80,7 @@ export function useWatchImages({ list }: { list: WatchList }) {
       watchId,
       drafts.map((d) => d.image)
     )
-    list.setImageBusy(watchId, true)
+    list.setUploading(watchId, true)
 
     const results = await Promise.allSettled(
       drafts.map((d) =>
@@ -94,45 +98,39 @@ export function useWatchImages({ list }: { list: WatchList }) {
           `${drafts[i].file.name}: ${errorMessage(result.reason, "Upload failed.")}`
         )
     })
-    if (!imageKeys.length) return finish()
 
-    startTransition(async () => {
-      try {
-        const res = await addWatchImages({ watchId, imageKeys })
-        if (!res.success) throw new Error(res.message)
-        toast.success(`${res.message} · ${watch.name}`)
-      } catch (error) {
-        toast.error(errorMessage(error, "Couldn't add the images."))
+    try {
+      if (imageKeys.length) {
+        // mutateAsync, not mutate: each upload needs its own "done" signal,
+        // and mutate's per-call callbacks only fire for the latest call
+        await addImages.mutateAsync({
+          watchId,
+          watchName: watch.name,
+          imageKeys,
+        })
       }
-      // the tiles leave in the same commit as the refreshed row's images
-      startTransition(finish)
-    })
+    } catch {
+      // the mutation's onError already showed the toast
+    } finally {
+      // the action's images were written into the cache first, so the
+      // tiles are swapped for the real images with no gap
+      finish()
+    }
   }
 
   const onFilesPicked = (files: FileList | null) => {
-    if (uploadTarget) upload(uploadTarget, files)
+    if (uploadTarget) void upload(uploadTarget, files)
   }
 
   const setCover = (watch: AdminWatch, imageId: string) => {
     const image = watch.images.find((i) => i.id === imageId)
     if (!image || list.imageBusyIds.has(watch.id)) return
-    const order = [image, ...watch.images.filter((i) => i !== image)]
-
-    list.setImageBusy(watch.id, true)
-    startTransition(async () => {
-      list.applyOptimistic({ type: "cover", id: watch.id, imageId })
-      try {
-        const res = await reorderWatchImages({
-          watchId: watch.id,
-          imageIds: order.map((i) => i.id),
-        })
-        if (!res.success) throw new Error(res.message)
-        toast.success(`${res.message} · ${watch.name}`)
-      } catch (error) {
-        // no manual undo: the optimistic order drops when this ends
-        toast.error(errorMessage(error, "Couldn't change the cover."))
-      }
-      startTransition(() => list.setImageBusy(watch.id, false))
+    cover.mutate({
+      watchId: watch.id,
+      watchName: watch.name,
+      imageIds: [image, ...watch.images.filter((i) => i !== image)].map(
+        (i) => i.id
+      ),
     })
   }
 
@@ -153,12 +151,12 @@ export function useWatchImages({ list }: { list: WatchList }) {
     }
   }
 
-  /** Run by the delete confirmation. The last image of a live watch also unpublishes it (server decides). */
+  /** Run by the delete confirmation. */
   const remove = async (target: ImageTarget) => {
-    // the refresh brings the row without the image (and unpublished if it
-    // was the last one)
-    const res = await deleteWatchImage({ id: target.id })
-    if (!res.success) throw new Error(res.message)
+    const res = await deleteImage.mutateAsync({
+      id: target.id,
+      watchId: target.watchId,
+    })
     return `${res.message} · ${target.name}`
   }
 

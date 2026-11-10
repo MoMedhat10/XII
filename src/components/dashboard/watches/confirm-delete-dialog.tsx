@@ -12,8 +12,8 @@ import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { cn } from "@/lib/utils"
 
-import { btn, btnGold, btnOutline, eyebrowSm, portalTheme } from "./watch-utils"
-import type { DeleteTarget } from "@/app/(dashboard)/_hooks/types"
+import { btn, btnDanger, btnOutline, portalTheme } from "./watch-utils"
+import type { DeleteTarget } from "@/app/(dashboard)/dashboard/watches/_hooks/types"
 
 const BODY: Record<Exclude<DeleteTarget["kind"], "image">, string> = {
   watch:
@@ -71,7 +71,7 @@ export function ConfirmDeleteDialog({
       <AlertDialogContent
         className={cn(
           portalTheme,
-          "w-[min(460px,calc(100vw-32px))] gap-[18px] border-gold bg-background p-6 shadow-[12px_12px_0_var(--foreground)] data-[size=default]:max-w-none sm:p-7 data-[size=default]:sm:max-w-none"
+          "w-[min(460px,calc(100vw-32px))] gap-[18px] border-danger bg-background p-6 shadow-[12px_12px_0_var(--foreground)] data-[size=default]:max-w-none sm:p-7 data-[size=default]:sm:max-w-none"
         )}
       >
         <div className="flex items-center gap-3.5">
@@ -79,18 +79,18 @@ export function ConfirmDeleteDialog({
             <img
               src={target.url}
               alt=""
-              className="size-12 shrink-0 border-4 border-gold object-cover"
+              className="size-12 shrink-0 border-4 border-danger object-cover"
             />
           ) : (
             <span
               aria-hidden="true"
-              className="flex size-12 shrink-0 items-center justify-center border-4 border-gold font-heading text-[22px] font-bold text-gold"
+              className="flex size-12 shrink-0 items-center justify-center border-4 border-danger font-heading text-[22px] font-bold text-danger"
             >
               !
             </span>
           )}
           <div className="flex min-w-0 flex-col gap-0.5">
-            <span className={eyebrowSm}>
+            <span className="font-heading text-xs leading-4 font-bold tracking-[1.5px] text-danger uppercase">
               {EYEBROW[target?.kind ?? "watch"]}
             </span>
             <AlertDialogTitle className="font-heading text-[28px] leading-[1.1] font-bold tracking-[-0.02em]">
@@ -115,7 +115,7 @@ export function ConfirmDeleteDialog({
             type="button"
             disabled={pending}
             onClick={onConfirm}
-            className={cn(btn, btnGold, "flex-1 px-4")}
+            className={cn(btn, btnDanger, "flex-1 px-4")}
           >
             {pending && <Spinner aria-hidden="true" />}
             {pending ? "Deleting…" : "Delete"}
