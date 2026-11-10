@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 
 import { PageHeader } from "../page-header"
 
-import { btn, btnGold, btnOutline, pad } from "./watch-utils"
+import { btn, btnGold, btnOutline, pad } from "../styles"
 
 export function WatchesHeader({
   total,

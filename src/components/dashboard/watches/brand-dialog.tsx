@@ -34,7 +34,7 @@ import {
   fieldError,
   fieldLabel,
   portalTheme,
-} from "./watch-utils"
+} from "../styles"
 import { BRAND_LOGO_TYPES } from "@/app/(dashboard)/dashboard/watches/_utils/upload-rules"
 import type {
   BrandDialogState,

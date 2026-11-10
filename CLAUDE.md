@@ -15,9 +15,12 @@ npm run lint         # eslint (flat config in eslint.config.mjs)
 npm run typecheck    # tsc --noEmit
 npm run format       # prettier on all .ts/.tsx (with tailwind class sorting)
 
-npx prisma migrate dev --name <name>   # create + apply a migration, regenerates the client
-npx prisma generate                    # regenerate the client only
+npx prisma migrate dev --name <name>   # create + apply a migration (does NOT regenerate the client)
+npx prisma generate                    # regenerate the client: run it after every migrate dev
 npx prisma db seed                     # runs `tsx prisma/seed.ts` (configured in prisma.config.ts)
+npm run seed:users                     # 24 sample customers (@seed.xii.test) with orders, carts, wishlists, sessions; re-run replaces them
+npm run seed:users -- --clear          # remove them (real accounts are never touched)
+npm run seed:orders -- <email>         # replace one account's orders with 6 sample orders
 npx prisma studio
 ```
 
@@ -52,6 +55,7 @@ Custom session auth built without an auth library. Everything sits inside the ro
 How it works:
 - **Sessions**: a random 32-byte hex id is stored in the `Session` table and set as the httpOnly cookie `xii_session` (7 days, or 30 with "remember me"). `getCurrentUser()` in `_utils/session.ts` resolves the cookie to a user and deletes the session if it has expired.
 - **OTPs**: 6-digit codes. Only the SHA-256 hash is stored in `VerificationCode` (typed by `VerificationCodeType`), and codes expire after 10 minutes. Login is blocked until `emailVerifiedAt` is set.
+- **Suspension**: `User.suspendedAt` is set by admins on the Users page. `loginUser` refuses suspended accounts (after the password check), and `getCurrentUser()` treats their sessions as signed out. Suspending also deletes the user's sessions.
 - **Password reset**: after the OTP step, a `PasswordResetSession` (10 min, cookie `reset_password_session`) carries the user through the verify → reset pages.
 - **Rate limiting**: `_utils/rateLimit.ts` runs an atomic fixed-window counter in Redis through a Lua script. Keys look like `register:user:<email>` and `otp:email-verification:<userId>`. There are two modes, and the choice is deliberate:
   - `rateLimitOrThrow` **fails closed**. It throws `ServiceUnavailableError` if Redis is down, and the action surfaces that error's message.
@@ -59,7 +63,12 @@ How it works:
 - **Cron**: `(auth)/api/cron/cleanup/route.ts` deletes expired verification codes (hourly), and `(dashboard)/api/cron/storage-cleanup/route.ts` deletes `tmp/` uploads older than 24 h (daily). Both are scheduled in `vercel.json` and require `Authorization: Bearer $CRON_SECRET`, checked by `isCronAuthorized` in `lib/cron-auth.ts`.
 
 ### Admin data (`src/app/(dashboard)/`)
-**Layout:** each admin route keeps its code in its own private folders (`dashboard/watches/_actions`, `_data`, `_hooks`, `_server`, `_utils`), like the storefront. Only `_server/require-admin.ts` and `_utils/action-result.ts` are shared at the group level. API handlers stay as thin files in `(dashboard)/api/` that call the route's `_data`, because Next.js never routes anything inside a `_` folder.
+**Layout:** each admin route (`dashboard/watches`, `dashboard/users`) keeps its code in its own private folders (`_actions`, `_data`, `_hooks`, `_server`, `_utils`), like the storefront. Code moves up to the group level only once a second route uses it:
+- `_server/require-admin.ts`
+- `_utils/`: `action-result` (server), `action-client` (`unwrap`, `ActionFailure`, `toServerError`, `errorMessage`), `admin-fetch` (`getJson`, `HttpError`, `adminQueryDefaults`), `url-filters` (`hrefFor`), `search` (`escapeLike`)
+- `_hooks/use-url-filters.ts`: URL-backed list filters
+
+Shared admin UI lives in `src/components/dashboard/` (`styles.ts`, `admin-pagination`, `page-header`). API handlers stay as thin files in `(dashboard)/api/` that call the route's `_data`, because Next.js never routes anything inside a `_` folder.
 
 The admin pages run on TanStack Query, not `revalidatePath`:
 - **Reads** go through GET route handlers in `(dashboard)/api/admin/*`, guarded by `adminApiGuard()` (returns 401/403 JSON; `requireAdmin()` is for pages and actions). Query keys live in `_utils/admin-keys.ts`, and query options in `_hooks/admin-queries.ts`.

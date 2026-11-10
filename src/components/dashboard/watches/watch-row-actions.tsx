@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
 
-import { portalTheme } from "./watch-utils"
+import { portalTheme } from "../styles"
 
 const item =
   "flex h-12 cursor-pointer justify-between rounded-none px-4 font-sans text-xs font-bold tracking-[1.5px] uppercase"

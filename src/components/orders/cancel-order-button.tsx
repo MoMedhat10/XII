@@ -10,7 +10,7 @@ import {
   btnOutline,
   eyebrowSm,
   portalTheme,
-} from "@/components/dashboard/watches/watch-utils"
+} from "@/components/dashboard/styles"
 import {
   AlertDialog,
   AlertDialogCancel,

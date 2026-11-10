@@ -1,9 +1,6 @@
 import type { ComponentProps } from "react"
 
-import {
-  fieldControl,
-  fieldLabel,
-} from "@/components/dashboard/watches/watch-utils"
+import { fieldControl, fieldLabel } from "@/components/dashboard/styles"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 

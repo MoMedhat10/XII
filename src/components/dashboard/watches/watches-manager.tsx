@@ -14,7 +14,7 @@ import { ConfirmDeleteDialog } from "./confirm-delete-dialog"
 import { WatchDrawer } from "./watch-drawer"
 import { WatchImageInput } from "./watch-image-input"
 import { WatchesHeader } from "./watches-header"
-import { WatchesPagination } from "./watches-pagination"
+import { AdminPagination } from "../admin-pagination"
 import {
   WatchesEmpty,
   WatchesError,
@@ -120,7 +120,7 @@ export function WatchesManager() {
                   imageBusyIds={list.imageBusyIds}
                   handlers={rowHandlers}
                 />
-                <WatchesPagination
+                <AdminPagination
                   page={data.page}
                   pageCount={data.pageCount}
                   total={data.total}

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 import { TableHead, tableColumns } from "./watches-table"
-import { btn, btnGold, btnOutline } from "./watch-utils"
+import { btn, btnGold, btnOutline } from "../styles"
 
 const panel =
   "relative flex min-h-[460px] flex-col items-center justify-center gap-4 overflow-hidden border-b-2 border-surface-variant px-4 py-12 text-center sm:min-h-[520px]"

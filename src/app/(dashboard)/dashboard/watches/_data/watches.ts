@@ -3,6 +3,7 @@ import type { Prisma } from "@/app/generated/prisma/client"
 import prisma from "../../../../../../lib/prisma"
 import { getPublicUrl } from "../../../../../../lib/storage"
 import { requireAdmin } from "../../../_server/require-admin"
+import { escapeLike } from "../../../_utils/search"
 import { WATCHES_PAGE_SIZE, type WatchFilters } from "../_utils/watch-schema"
 import type { AdminWatch, AdminWatchImage, AdminWatchPage } from "./types"
 
@@ -57,10 +58,7 @@ function filtersWhere({
   brand,
   status,
 }: WatchFilters): Prisma.WatchWhereInput {
-  // Prisma passes `contains` straight into ILIKE without escaping, so a
-  // search for "%" or "_" would match every watch. Backslash is ILIKE's
-  // default escape character.
-  const term = q.replace(/[\\%_]/g, "\\$&")
+  const term = escapeLike(q)
   return {
     ...(term && {
       OR: [

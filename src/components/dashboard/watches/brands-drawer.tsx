@@ -12,15 +12,8 @@ import {
 } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
 
-import {
-  btn,
-  btnGold,
-  closeBtn,
-  eyebrowSm,
-  initials,
-  pad,
-  portalTheme,
-} from "./watch-utils"
+import { btn, btnGold, closeBtn, eyebrowSm, pad, portalTheme } from "../styles"
+import { initials } from "./watch-utils"
 
 const rowLink =
   "border-b-2 border-surface-variant pb-0.5 font-sans text-[11px] font-bold tracking-[1.5px] uppercase transition-colors hover:border-gold hover:text-gold"

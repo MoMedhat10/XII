@@ -1,83 +1,89 @@
-import crypto from "crypto";
-import prisma from "../../../../lib/prisma";
-import { cookies } from "next/headers";
+import crypto from "crypto"
+import prisma from "../../../../lib/prisma"
+import { cookies } from "next/headers"
 
-import { cache } from "react";
-import type { Prisma } from "@/app/generated/prisma/client";
-import { logger } from "../../../../lib/pino";
+import { cache } from "react"
+import type { Prisma } from "@/app/generated/prisma/client"
+import { logger } from "../../../../lib/pino"
 
-const SEVEN_DAYS_IN_MS = 7 * 24 * 60 * 60 * 1000;
-const THIRTY_DAYS_IN_MS = 30 * 24 * 60 * 60 * 1000;
+const SEVEN_DAYS_IN_MS = 7 * 24 * 60 * 60 * 1000
+const THIRTY_DAYS_IN_MS = 30 * 24 * 60 * 60 * 1000
 
 export const publicUserSelect = {
-    id: true,
-    username: true,
-    email: true,
-    role: true,
-    emailVerifiedAt: true,
-} satisfies Prisma.UserSelect;
+  id: true,
+  username: true,
+  email: true,
+  role: true,
+  emailVerifiedAt: true,
+  suspendedAt: true,
+} satisfies Prisma.UserSelect
 
-export type PublicUser = Prisma.UserGetPayload<{ select: typeof publicUserSelect }>;
-
+export type PublicUser = Prisma.UserGetPayload<{
+  select: typeof publicUserSelect
+}>
 
 export const createSession = async (userId: string, rememberMe: boolean) => {
-    const sessionId = crypto.randomBytes(32).toString("hex");
+  const sessionId = crypto.randomBytes(32).toString("hex")
 
-    const expiresAt = new Date(Date.now() + (rememberMe ? THIRTY_DAYS_IN_MS : SEVEN_DAYS_IN_MS));
+  const expiresAt = new Date(
+    Date.now() + (rememberMe ? THIRTY_DAYS_IN_MS : SEVEN_DAYS_IN_MS)
+  )
 
-    await prisma.session.create({
-        data: {
-            id: sessionId,
-            userId,
-            expiresAt,
-        },
-    });
+  await prisma.session.create({
+    data: {
+      id: sessionId,
+      userId,
+      expiresAt,
+    },
+  })
 
-    const cookieStore = await cookies();
+  const cookieStore = await cookies()
 
-    cookieStore.set("xii_session", sessionId, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        expires: expiresAt,
-    });
-};
-
+  cookieStore.set("xii_session", sessionId, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    expires: expiresAt,
+  })
+}
 
 export const getCurrentUser = cache(async (): Promise<PublicUser | null> => {
-    const cookieStore = await cookies();
-    const sessionId = cookieStore.get("xii_session")?.value;
-    if (!sessionId) return null;
+  const cookieStore = await cookies()
+  const sessionId = cookieStore.get("xii_session")?.value
+  if (!sessionId) return null
 
-    try {
-        const session = await prisma.session.findUnique({
-            where: {
-                id: sessionId,
-            },
-            include: {
-                user: { select: publicUserSelect },
-            },
-        });
+  try {
+    const session = await prisma.session.findUnique({
+      where: {
+        id: sessionId,
+      },
+      include: {
+        user: { select: publicUserSelect },
+      },
+    })
 
-
-        if (!session || new Date() >= session.expiresAt) {
-            return null;
-        }
-
-        return session.user;
-
-    } catch (error) {
-        logger.error(error, "Error fetching current user");
-        return null;
+    // suspending also deletes the user's sessions; this covers any that
+    // slip through
+    if (
+      !session ||
+      new Date() >= session.expiresAt ||
+      session.user.suspendedAt
+    ) {
+      return null
     }
+
+    return session.user
+  } catch (error) {
+    logger.error(error, "Error fetching current user")
+    return null
+  }
 })
 
-
 export const deleteSession = async (sessionId: string) => {
-    return await prisma.session.deleteMany({
-        where: {
-            id: sessionId,
-        }
-    })
+  return await prisma.session.deleteMany({
+    where: {
+      id: sessionId,
+    },
+  })
 }

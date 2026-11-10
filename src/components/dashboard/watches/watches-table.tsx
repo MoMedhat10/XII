@@ -10,7 +10,8 @@ import { cn } from "@/lib/utils"
 import { LiveToggle } from "./live-toggle"
 import { WatchRowActions } from "./watch-row-actions"
 import { WatchRowImages } from "./watch-row-images"
-import { brandNameFor, formatPrice, pad } from "./watch-utils"
+import { pad } from "../styles"
+import { brandNameFor, formatPrice } from "./watch-utils"
 
 export const tableColumns =
   "xl:grid xl:grid-cols-[minmax(180px,1.5fr)_minmax(0,2fr)_minmax(0,1fr)_110px_90px_70px_56px] xl:gap-5"

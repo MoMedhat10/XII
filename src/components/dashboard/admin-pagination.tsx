@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/pagination"
 import { cn } from "@/lib/utils"
 
-import { pad } from "./watch-utils"
+import { pad } from "./styles"
 
 /** Page numbers with gaps once there are many pages: 01 … 04 05 06 … 12 */
 function pageWindow(page: number, pageCount: number): (number | "gap")[] {
@@ -23,7 +23,7 @@ function pageWindow(page: number, pageCount: number): (number | "gap")[] {
 const edge =
   "h-11 px-4 font-sans text-xs font-bold tracking-[1.5px] uppercase transition-colors hover:bg-foreground hover:text-black disabled:pointer-events-none disabled:opacity-35"
 
-export function WatchesPagination({
+export function AdminPagination({
   page,
   pageCount,
   total,

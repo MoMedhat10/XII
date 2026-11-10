@@ -10,7 +10,8 @@
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
-    "seed:orders": "tsx prisma/seed-orders.ts"
+    "seed:orders": "tsx prisma/seed-orders.ts",
+    "seed:users": "tsx prisma/seed-users.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1152.0",

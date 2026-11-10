@@ -37,7 +37,7 @@ import {
   fieldLabel,
   portalTheme,
   textLinkDanger,
-} from "./watch-utils"
+} from "../styles"
 import { MAX_STOCK } from "@/app/(dashboard)/dashboard/watches/_utils/upload-rules"
 import type {
   ServerError,

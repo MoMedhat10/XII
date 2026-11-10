@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from "react"
 
+import { hrefFor as sharedHrefFor } from "../../../_utils/url-filters"
 import type { WatchFilters } from "./watch-schema"
 
 export const DEFAULT_FILTERS: WatchFilters = {
@@ -9,22 +10,9 @@ export const DEFAULT_FILTERS: WatchFilters = {
   page: 1,
 }
 
-export const SEARCH_DEBOUNCE_MS = 300
-
-export function hrefFor(pathname: string, filters: WatchFilters) {
-  const params = new URLSearchParams()
-  for (const key of Object.keys(DEFAULT_FILTERS) as (keyof WatchFilters)[]) {
-    const value = filters[key]
-    if (value !== DEFAULT_FILTERS[key] && value !== "") {
-      params.set(key, String(value))
-    }
-  }
-  const query = params.toString()
-  return query ? `${pathname}?${query}` : pathname
-}
-
-export const errorMessage = (error: unknown, fallback: string) =>
-  error instanceof Error ? error.message : fallback
+/** The watches page URL for `filters` (defaults left out). */
+export const hrefFor = (pathname: string, filters: WatchFilters) =>
+  sharedHrefFor(pathname, filters, DEFAULT_FILTERS)
 
 export const toggleId =
   (setter: Dispatch<SetStateAction<ReadonlySet<string>>>) =>

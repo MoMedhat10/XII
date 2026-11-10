@@ -35,13 +35,11 @@ export const ADMIN_NAV: { section: string | null; items: AdminNavItem[] }[] = [
     section: "Commerce",
     items: [
       { label: "Orders", href: "/dashboard/orders", icon: Package, soon: true },
-      {
-        label: "Customers",
-        href: "/dashboard/customers",
-        icon: Users,
-        soon: true,
-      },
     ],
+  },
+  {
+    section: "Accounts",
+    items: [{ label: "Users", href: "/dashboard/users", icon: Users }],
   },
 ]
 

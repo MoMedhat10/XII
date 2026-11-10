@@ -9,14 +9,13 @@ import {
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 
+import { toolbarControl as control } from "../styles"
+
 const STATUS_LABELS: Record<WatchStatusFilter, string> = {
   all: "All",
   live: "Live",
   draft: "Draft",
 }
-
-const control =
-  "h-12 border-2 border-surface-variant bg-[#141515] text-foreground outline-none focus:border-foreground focus:ring-0 dark:border-surface-variant dark:bg-[#141515] dark:focus:border-foreground"
 
 export function WatchesToolbar({
   filters,

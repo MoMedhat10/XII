@@ -17,10 +17,7 @@ import {
   isDialCountry,
   splitInternational,
 } from "@/app/(app)/checkout/_utils/phone"
-import {
-  fieldControl,
-  fieldLabel,
-} from "@/components/dashboard/watches/watch-utils"
+import { fieldControl, fieldLabel } from "@/components/dashboard/styles"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 

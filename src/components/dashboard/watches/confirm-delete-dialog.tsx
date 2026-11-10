@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { cn } from "@/lib/utils"
 
-import { btn, btnDanger, btnOutline, portalTheme } from "./watch-utils"
+import { btn, btnDanger, btnOutline, portalTheme } from "../styles"
 import type { DeleteTarget } from "@/app/(dashboard)/dashboard/watches/_hooks/types"
 
 const BODY: Record<Exclude<DeleteTarget["kind"], "image">, string> = {

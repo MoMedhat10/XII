@@ -12,10 +12,7 @@ import type {
   CheckoutFormInput,
   CheckoutFormOutput,
 } from "@/app/(app)/checkout/_utils/checkout-schema"
-import {
-  fieldControl,
-  fieldLabel,
-} from "@/components/dashboard/watches/watch-utils"
+import { fieldControl, fieldLabel } from "@/components/dashboard/styles"
 import { cn } from "@/lib/utils"
 
 import { CheckoutField, errorBorder, errorText } from "./checkout-field"

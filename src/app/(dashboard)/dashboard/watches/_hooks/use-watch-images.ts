@@ -9,7 +9,7 @@ import type { AdminWatch, AdminWatchImage } from "../_data/types"
 import { MAX_WATCH_IMAGES } from "../_utils/upload-rules"
 import { watchImageFileSchema } from "../_utils/watch-schema"
 import { uploadWatchImage } from "../_utils/watch-upload"
-import { errorMessage } from "../_utils/watches-client"
+import { errorMessage } from "../../../_utils/action-client"
 import {
   useAddWatchImages,
   useDeleteWatchImage,

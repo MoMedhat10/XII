@@ -2,380 +2,419 @@
 
 import { cookies } from "next/headers"
 import { sendOTPEmail } from "../_utils/email"
-import { LoginInput, loginSchema, RegisterInput, registerSchema } from "../_utils/schema"
+import {
+  LoginInput,
+  loginSchema,
+  RegisterInput,
+  registerSchema,
+} from "../_utils/schema"
 import bcrypt from "bcryptjs"
 import { createSession, deleteSession } from "../_utils/session"
 import { verifyEmailTemplate } from "../_utils/templates"
 import { generateOTPAndHashedOTP, getHashedOTP } from "../_utils/OTP"
 import { createUser, findExistingUser, findUserById } from "../_utils/user"
-import { createVerificationCode, deleteVerificationCodeById, deleteVerificationCodes, getVerificationCode, verifyUserEmail } from "../_utils/verificationCode"
-import { rateLimit, rateLimitOrThrow, ServiceUnavailableError } from "../_utils/rateLimit"
+import {
+  createVerificationCode,
+  deleteVerificationCodeById,
+  deleteVerificationCodes,
+  getVerificationCode,
+  verifyUserEmail,
+} from "../_utils/verificationCode"
+import {
+  rateLimit,
+  rateLimitOrThrow,
+  ServiceUnavailableError,
+} from "../_utils/rateLimit"
 import { logger } from "../../../../lib/pino"
 
-
-
-type AuthRes = Promise<{ success: boolean, message: string, data?: string }>;
+type AuthRes = Promise<{ success: boolean; message: string; data?: string }>
 
 // review or change the reset password to verify users
 export const registerUser = async (data: RegisterInput): AuthRes => {
-    try {
-        const result = registerSchema.safeParse(data)
-        if (!result.success) {
-            return {
-                success: false,
-                message: "Invalid data",
-            }
-        }
-
-        const { username, email, password } = result.data;
-
-        // Rate limiting 
-        const rateLimitResult = await rateLimitOrThrow({
-            key: `register:user:${email}`,
-            limit: 5,
-            windowSeconds: 10 * 60
-        });
-
-        if (!rateLimitResult.allowed) {
-            return {
-                success: false,
-                message: "Too many attempts. Please try again later.",
-            };
-        }
-
-        const existingUser = await findExistingUser(username, email);
-
-        if (existingUser) {
-            if (existingUser.username.toLowerCase() === username.toLowerCase()) {
-                return {
-                    success: false,
-                    message: "Username already exists",
-                };
-            }
-
-            if (existingUser.email.toLowerCase() === email.toLowerCase()) {
-                return {
-                    success: false,
-                    message: "Email already exists",
-                };
-            }
-        }
-
-        const user = await createUser({
-            username,
-            email,
-            password
-        })
-
-        const [otp, otpHash] = generateOTPAndHashedOTP();
-
-        await createVerificationCode({
-            userId: user.id,
-            codeHash: otpHash,
-            type: "EMAIL_VERIFICATION",
-        });
-
-        const emailResult = await sendOTPEmail({ email, code: otp, template: verifyEmailTemplate })
-
-        if (!emailResult.success) {
-            return {
-                success: false,
-                message: "Failed to send email",
-            }
-        }
-
-        logger.info({
-            userId: user.id,
-            email: user.email,
-        }, "User registered successfully");
-
-        return {
-            success: true,
-            message: emailResult.message,
-            data: user.id,
-        }
-
-
-    } catch (error) {
-        logger.error(error, "error in registerUser");
-        return {
-            success: false,
-            message: "Something went wrong!",
-        }
+  try {
+    const result = registerSchema.safeParse(data)
+    if (!result.success) {
+      return {
+        success: false,
+        message: "Invalid data",
+      }
     }
 
+    const { username, email, password } = result.data
+
+    // Rate limiting
+    const rateLimitResult = await rateLimitOrThrow({
+      key: `register:user:${email}`,
+      limit: 5,
+      windowSeconds: 10 * 60,
+    })
+
+    if (!rateLimitResult.allowed) {
+      return {
+        success: false,
+        message: "Too many attempts. Please try again later.",
+      }
+    }
+
+    const existingUser = await findExistingUser(username, email)
+
+    if (existingUser) {
+      if (existingUser.username.toLowerCase() === username.toLowerCase()) {
+        return {
+          success: false,
+          message: "Username already exists",
+        }
+      }
+
+      if (existingUser.email.toLowerCase() === email.toLowerCase()) {
+        return {
+          success: false,
+          message: "Email already exists",
+        }
+      }
+    }
+
+    const user = await createUser({
+      username,
+      email,
+      password,
+    })
+
+    const [otp, otpHash] = generateOTPAndHashedOTP()
+
+    await createVerificationCode({
+      userId: user.id,
+      codeHash: otpHash,
+      type: "EMAIL_VERIFICATION",
+    })
+
+    const emailResult = await sendOTPEmail({
+      email,
+      code: otp,
+      template: verifyEmailTemplate,
+    })
+
+    if (!emailResult.success) {
+      return {
+        success: false,
+        message: "Failed to send email",
+      }
+    }
+
+    logger.info(
+      {
+        userId: user.id,
+        email: user.email,
+      },
+      "User registered successfully"
+    )
+
+    return {
+      success: true,
+      message: emailResult.message,
+      data: user.id,
+    }
+  } catch (error) {
+    logger.error(error, "error in registerUser")
+    return {
+      success: false,
+      message: "Something went wrong!",
+    }
+  }
 }
 
 export const loginUser = async (data: LoginInput): AuthRes => {
-    try {
-        const result = loginSchema.safeParse(data);
-        if (!result.success) {
-            return {
-                success: false,
-                message: "Invalid data",
-            }
-        }
-
-        const { identifier, password, remember } = result.data;
-        const normalizedIdentifier = identifier.includes("@")
-            ? identifier.trim().toLowerCase()
-            : identifier.trim();
-
-        try {
-            const rateLimitResult = await rateLimit({
-                key: `login:user:${normalizedIdentifier}`,
-                limit: 5,
-                windowSeconds: 15 * 60
-            });
-            if (!rateLimitResult.allowed) {
-                return {
-                    success: false,
-                    message: "Too many attempts. Please try again later.",
-                };
-            }
-        } catch (error) {
-            logger.error(error, "error in redis service!");
-        }
-
-        const existingUser = await findExistingUser(normalizedIdentifier, normalizedIdentifier);
-
-        if (!existingUser) {
-            return {
-                success: false,
-                message: "Invalid credentials",
-            }
-        }
-
-        const passwordMatch = await bcrypt.compare(password, existingUser.passwordHash);
-        if (!passwordMatch) {
-            return {
-                success: false,
-                message: "Invalid credentials",
-            }
-        }
-
-        if (!existingUser.emailVerifiedAt) {
-            return {
-                success: false,
-                message: "Please verify your email first.",
-            }
-        }
-
-        await createSession(existingUser.id, remember);
-
-        logger.info({
-            userId: existingUser.id,
-            email: existingUser.email,
-        }, "User logged in successfully");
-
-        return {
-            success: true,
-            message: `welcome back ${existingUser.username}!`,
-        }
-
-    } catch (error) {
-        logger.error(error, "error in loginUser");
-        return {
-            success: false,
-            message: "Something went wrong!",
-        }
+  try {
+    const result = loginSchema.safeParse(data)
+    if (!result.success) {
+      return {
+        success: false,
+        message: "Invalid data",
+      }
     }
-}
 
+    const { identifier, password, remember } = result.data
+    const normalizedIdentifier = identifier.includes("@")
+      ? identifier.trim().toLowerCase()
+      : identifier.trim()
+
+    try {
+      const rateLimitResult = await rateLimit({
+        key: `login:user:${normalizedIdentifier}`,
+        limit: 5,
+        windowSeconds: 15 * 60,
+      })
+      if (!rateLimitResult.allowed) {
+        return {
+          success: false,
+          message: "Too many attempts. Please try again later.",
+        }
+      }
+    } catch (error) {
+      logger.error(error, "error in redis service!")
+    }
+
+    const existingUser = await findExistingUser(
+      normalizedIdentifier,
+      normalizedIdentifier
+    )
+
+    if (!existingUser) {
+      return {
+        success: false,
+        message: "Invalid credentials",
+      }
+    }
+
+    const passwordMatch = await bcrypt.compare(
+      password,
+      existingUser.passwordHash
+    )
+    if (!passwordMatch) {
+      return {
+        success: false,
+        message: "Invalid credentials",
+      }
+    }
+
+    if (!existingUser.emailVerifiedAt) {
+      return {
+        success: false,
+        message: "Please verify your email first.",
+      }
+    }
+
+    // checked after the password, so a wrong guess never reveals that an
+    // account is suspended
+    if (existingUser.suspendedAt) {
+      return {
+        success: false,
+        message: "This account is suspended. Contact support.",
+      }
+    }
+
+    await createSession(existingUser.id, remember)
+
+    logger.info(
+      {
+        userId: existingUser.id,
+        email: existingUser.email,
+      },
+      "User logged in successfully"
+    )
+
+    return {
+      success: true,
+      message: `welcome back ${existingUser.username}!`,
+    }
+  } catch (error) {
+    logger.error(error, "error in loginUser")
+    return {
+      success: false,
+      message: "Something went wrong!",
+    }
+  }
+}
 
 export const verifyEmail = async (id: string, otp: string): AuthRes => {
-    try {
-        const user = await findUserById(id);
+  try {
+    const user = await findUserById(id)
 
-        if (!user) {
-            return {
-                success: false,
-                message: "User not found!",
-            };
-        }
-
-        if (user.emailVerifiedAt) {
-            return {
-                success: false,
-                message: "Email already verified!",
-            };
-        }
-
-
-        // Rate limiting 
-        const rateLimitResult = await rateLimitOrThrow({
-            key: `otp:email-verification:${user.id}`,
-            limit: 5,
-            windowSeconds: 10 * 60
-        });
-
-        if (!rateLimitResult.allowed) {
-            return {
-                success: false,
-                message: "Too many attempts. Please try again later.",
-            };
-        }
-
-
-        const submittedHash = getHashedOTP(otp);
-
-        const verificationCode = await getVerificationCode({
-            userId: user.id,
-            codeHash: submittedHash,
-            type: "EMAIL_VERIFICATION",
-        });
-
-        if (!verificationCode) {
-            return {
-                success: false,
-                message: "Invalid verification code",
-            };
-        }
-
-        if (new Date() >= verificationCode.expiresAt) {
-            await deleteVerificationCodeById(verificationCode.id);
-
-            return {
-                success: false,
-                message: "Verification code expired",
-            };
-        }
-
-        await verifyUserEmail(user.id, verificationCode.id);
-
-        logger.info({
-            userId: user.id,
-            email: user.email,
-        }, "Email verified successfully");
-
-        return {
-            success: true,
-            message: "Email verified successfully",
-        };
-    } catch (error) {
-        logger.error(error, "error in verifyEmail");
-        if (error instanceof ServiceUnavailableError) {
-            return {
-                success: false,
-                message: error.message,
-            };
-        }
-
-        return {
-            success: false,
-            message: "Something went wrong!",
-        };
+    if (!user) {
+      return {
+        success: false,
+        message: "User not found!",
+      }
     }
-};
 
-export const resendEmailVerificationCode = async (id: string): AuthRes => {
-    try {
-        const user = await findUserById(id);
-
-        if (!user) {
-            return {
-                success: false,
-                message: "User not found!",
-            };
-        }
-
-        if (user.emailVerifiedAt) {
-            return {
-                success: false,
-                message: "Email already verified!",
-            };
-        }
-
-
-        // Rate limiting 
-        const rateLimitResult = await rateLimitOrThrow({
-            key: `otp:email-resend:${user.id}`,
-            limit: 3,
-            windowSeconds: 10 * 60
-        });
-
-        if (!rateLimitResult.allowed) {
-            return {
-                success: false,
-                message: "Too many resend attempts. Please try again later.",
-            };
-        }
-
-
-        await deleteVerificationCodes(user.id, "EMAIL_VERIFICATION");
-
-        const [otp, otpHash] = generateOTPAndHashedOTP();
-
-        await createVerificationCode({
-            userId: user.id,
-            codeHash: otpHash,
-            type: "EMAIL_VERIFICATION",
-        })
-
-        const emailResult = await sendOTPEmail({ email: user.email, code: otp, template: verifyEmailTemplate })
-
-        if (!emailResult.success) {
-            return {
-                success: false,
-                message: "Failed to send email",
-            }
-        }
-
-        logger.info({
-            userId: user.id,
-            email: user.email,
-        }, "code resent successfully");
-
-        return {
-            success: true,
-            message: "code resent successfully"
-        }
-
-    } catch (error) {
-        logger.error(error, "error in resendEmailVerificationCode");
-        if (error instanceof ServiceUnavailableError) {
-            return {
-                success: false,
-                message: error.message,
-            };
-        }
-        return {
-            success: false,
-            message: "Something went wrong!",
-        }
+    if (user.emailVerifiedAt) {
+      return {
+        success: false,
+        message: "Email already verified!",
+      }
     }
+
+    // Rate limiting
+    const rateLimitResult = await rateLimitOrThrow({
+      key: `otp:email-verification:${user.id}`,
+      limit: 5,
+      windowSeconds: 10 * 60,
+    })
+
+    if (!rateLimitResult.allowed) {
+      return {
+        success: false,
+        message: "Too many attempts. Please try again later.",
+      }
+    }
+
+    const submittedHash = getHashedOTP(otp)
+
+    const verificationCode = await getVerificationCode({
+      userId: user.id,
+      codeHash: submittedHash,
+      type: "EMAIL_VERIFICATION",
+    })
+
+    if (!verificationCode) {
+      return {
+        success: false,
+        message: "Invalid verification code",
+      }
+    }
+
+    if (new Date() >= verificationCode.expiresAt) {
+      await deleteVerificationCodeById(verificationCode.id)
+
+      return {
+        success: false,
+        message: "Verification code expired",
+      }
+    }
+
+    await verifyUserEmail(user.id, verificationCode.id)
+
+    logger.info(
+      {
+        userId: user.id,
+        email: user.email,
+      },
+      "Email verified successfully"
+    )
+
+    return {
+      success: true,
+      message: "Email verified successfully",
+    }
+  } catch (error) {
+    logger.error(error, "error in verifyEmail")
+    if (error instanceof ServiceUnavailableError) {
+      return {
+        success: false,
+        message: error.message,
+      }
+    }
+
+    return {
+      success: false,
+      message: "Something went wrong!",
+    }
+  }
 }
 
+export const resendEmailVerificationCode = async (id: string): AuthRes => {
+  try {
+    const user = await findUserById(id)
+
+    if (!user) {
+      return {
+        success: false,
+        message: "User not found!",
+      }
+    }
+
+    if (user.emailVerifiedAt) {
+      return {
+        success: false,
+        message: "Email already verified!",
+      }
+    }
+
+    // Rate limiting
+    const rateLimitResult = await rateLimitOrThrow({
+      key: `otp:email-resend:${user.id}`,
+      limit: 3,
+      windowSeconds: 10 * 60,
+    })
+
+    if (!rateLimitResult.allowed) {
+      return {
+        success: false,
+        message: "Too many resend attempts. Please try again later.",
+      }
+    }
+
+    await deleteVerificationCodes(user.id, "EMAIL_VERIFICATION")
+
+    const [otp, otpHash] = generateOTPAndHashedOTP()
+
+    await createVerificationCode({
+      userId: user.id,
+      codeHash: otpHash,
+      type: "EMAIL_VERIFICATION",
+    })
+
+    const emailResult = await sendOTPEmail({
+      email: user.email,
+      code: otp,
+      template: verifyEmailTemplate,
+    })
+
+    if (!emailResult.success) {
+      return {
+        success: false,
+        message: "Failed to send email",
+      }
+    }
+
+    logger.info(
+      {
+        userId: user.id,
+        email: user.email,
+      },
+      "code resent successfully"
+    )
+
+    return {
+      success: true,
+      message: "code resent successfully",
+    }
+  } catch (error) {
+    logger.error(error, "error in resendEmailVerificationCode")
+    if (error instanceof ServiceUnavailableError) {
+      return {
+        success: false,
+        message: error.message,
+      }
+    }
+    return {
+      success: false,
+      message: "Something went wrong!",
+    }
+  }
+}
 
 export const logout = async (): AuthRes => {
-    try {
-        const cookieStore = await cookies();
-        const sessionId = cookieStore.get("xii_session")?.value;
+  try {
+    const cookieStore = await cookies()
+    const sessionId = cookieStore.get("xii_session")?.value
 
-        if (!sessionId) {
-            return {
-                success: false,
-                message: "No active session found",
-            }
-        }
-
-        await deleteSession(sessionId);
-        cookieStore.delete("xii_session");
-
-        logger.info({
-            sessionId,
-        }, "User logged out successfully");
-
-        return {
-            success: true,
-            message: "Logged out successfully",
-        }
-
-    } catch (error) {
-        logger.error(error, "error in logout");
-        return {
-            success: false,
-            message: "Something went wrong",
-        }
+    if (!sessionId) {
+      return {
+        success: false,
+        message: "No active session found",
+      }
     }
+
+    await deleteSession(sessionId)
+    cookieStore.delete("xii_session")
+
+    logger.info(
+      {
+        sessionId,
+      },
+      "User logged out successfully"
+    )
+
+    return {
+      success: true,
+      message: "Logged out successfully",
+    }
+  } catch (error) {
+    logger.error(error, "error in logout")
+    return {
+      success: false,
+      message: "Something went wrong",
+    }
+  }
 }

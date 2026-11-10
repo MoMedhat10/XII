@@ -5,7 +5,7 @@ import { toast } from "sonner"
 
 import type { DeleteTarget } from "./types"
 
-import { errorMessage } from "../_utils/watches-client"
+import { errorMessage } from "../../../_utils/action-client"
 
 /** One delete per kind: resolves with the success toast text, throws on failure. */
 export type DeleteRunners = {

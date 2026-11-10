@@ -15,8 +15,8 @@ import {
   ActionFailure,
   toServerError,
   unwrap,
-  useDeleteBrand,
-} from "./admin-mutations"
+} from "../../../_utils/action-client"
+import { useDeleteBrand } from "./admin-mutations"
 import type { WatchFiltersApi } from "./use-watch-filters"
 
 const logoRequired = new ActionFailure("Logo is required.", {

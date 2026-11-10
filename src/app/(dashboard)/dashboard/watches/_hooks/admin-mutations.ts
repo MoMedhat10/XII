@@ -9,16 +9,16 @@ import {
 } from "@tanstack/react-query"
 import { toast } from "sonner"
 
-import type { ServerError, WatchDrawerState } from "./types"
+import type { WatchDrawerState } from "./types"
 
 import type { AdminWatch, AdminWatchPage } from "../_data/types"
-import type { ActionRes, FieldErrors } from "../../../_utils/action-result"
+import { errorMessage, unwrap } from "../../../_utils/action-client"
 import { adminKeys, adminMutationKeys } from "../_utils/admin-keys"
 import {
   EDITABLE_WATCH_FIELDS,
   type WatchFormInput,
 } from "../_utils/watch-schema"
-import { errorMessage, pick } from "../_utils/watches-client"
+import { pick } from "../_utils/watches-client"
 import { deleteBrand } from "../_actions/brands"
 import {
   createWatch,
@@ -31,34 +31,6 @@ import {
   deleteWatchImage,
   reorderWatchImages,
 } from "../_actions/watch-images"
-
-// ── Server action results → thrown errors ──────────────────────────────────
-// Actions return { success: false } instead of throwing. TanStack only knows a
-// mutation failed when mutationFn throws, so unwrap() turns one into the other.
-
-export class ActionFailure extends Error {
-  constructor(
-    message: string,
-    readonly fieldErrors?: FieldErrors
-  ) {
-    super(message)
-  }
-}
-
-export function unwrap<T>(res: ActionRes<T>) {
-  if (!res.success) throw new ActionFailure(res.message, res.fieldErrors)
-  return res
-}
-
-/** A mutation's error in the shape the forms show (field errors or a toast). */
-export const toServerError = (error: Error | null): ServerError | undefined =>
-  error
-    ? {
-        message: error.message,
-        fieldErrors:
-          error instanceof ActionFailure ? error.fieldErrors : undefined,
-      }
-    : undefined
 
 // ── Cache helpers ──────────────────────────────────────────────────────────
 
