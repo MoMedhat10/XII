@@ -7,6 +7,7 @@ import type { OrderStatus } from "@/app/generated/prisma/client"
 import {
   DAY,
   SAMPLE_ADDRESS,
+  fulfilmentFor,
   buildOrderItems,
   createSeedClient,
   loadActiveWatches,
@@ -68,6 +69,7 @@ async function main() {
           status,
           totalCents: orderTotal(items),
           createdAt: placedAt,
+          ...fulfilmentFor(status, placedAt),
           ...SAMPLE_ADDRESS,
           orderItems: {
             create: items.map((i) => ({ ...i, createdAt: placedAt })),

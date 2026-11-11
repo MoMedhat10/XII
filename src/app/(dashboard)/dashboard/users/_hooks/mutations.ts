@@ -11,6 +11,7 @@ import {
   signOutEverywhere,
 } from "../_actions/users"
 import { userKeys } from "../_utils/keys"
+import { overviewKeys } from "../../_utils/overview-keys"
 
 /** Who the action is for, so toasts can name them. */
 type Target = { id: string; username: string }
@@ -30,7 +31,11 @@ export function useUserActions({
   // returned from onSettled, so each mutation stays pending until the
   // refetch is done and the drawer never shows stale data
   const refresh = () =>
-    queryClient.invalidateQueries({ queryKey: userKeys.all() })
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: userKeys.all() }),
+      // sign-ups, unverified count and user totals on the overview
+      queryClient.invalidateQueries({ queryKey: overviewKeys.all() }),
+    ])
   const onError = (error: Error) =>
     toast.error(errorMessage(error, "That didn't work. Please try again."))
 

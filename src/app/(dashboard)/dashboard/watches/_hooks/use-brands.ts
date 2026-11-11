@@ -8,6 +8,7 @@ import type { BrandDialogState, DeleteTarget } from "./types"
 
 import type { AdminBrand } from "../_data/types"
 import { adminKeys } from "../_utils/admin-keys"
+import { overviewKeys } from "../../_utils/overview-keys"
 import { uploadBrandLogo } from "../_utils/brand-upload"
 import type { BrandFormInput } from "../_utils/brand-schema"
 import { createBrand, updateBrand } from "../_actions/brands"
@@ -73,7 +74,11 @@ export function useBrands({ filters }: { filters: WatchFiltersApi }) {
     mutationFn: saveBrand,
     // returned, so the dialog stays "saving" until the brand list is fresh
     onSettled: () =>
-      queryClient.invalidateQueries({ queryKey: adminKeys.brands() }),
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: adminKeys.brands() }),
+        // the brand count on the overview
+        queryClient.invalidateQueries({ queryKey: overviewKeys.all() }),
+      ]),
   })
   const deleteMutation = useDeleteBrand()
 

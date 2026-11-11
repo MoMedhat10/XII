@@ -16,7 +16,6 @@ export const metadata: Metadata = {
   title: "Users — XII Admin",
 }
 
-
 export default async function AdminUsersPage({
   searchParams,
 }: {

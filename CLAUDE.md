@@ -31,7 +31,7 @@ Environment variables (`.env`, loaded by `prisma.config.ts` via `dotenv/config`)
 ## Architecture
 
 ### What exists vs. what's planned
-`README.md` and `implementation_plan.md` describe the full storefront (catalog, product pages at `/timepieces/[slug]`, finder, compare, cart, …). **Most of it isn't built yet.** What exists now is the auth system, a placeholder `(dashboard)/dashboard` page, the home page, and the Prisma schema, which already models the commerce domain (`Brand`, `Watch`, `WatchImage`, `FavoriteWatch`, `Cart`/`CartItem`, `Order`/`OrderItem`).
+`README.md` and `implementation_plan.md` describe the full storefront (catalog, product pages at `/timepieces/[slug]`, finder, compare, cart, …). **Most of it isn't built yet.** What exists now is the auth system, the admin dashboard (overview, watches, users, orders), the home page, and the Prisma schema, which already models the commerce domain (`Brand`, `Watch`, `WatchImage`, `FavoriteWatch`, `Cart`/`CartItem`, `Order`/`OrderItem`).
 
 ### Shared server singletons live in the root `lib/`, not `src/lib/`
 - `lib/prisma.ts`: a `PrismaClient` using the `@prisma/adapter-pg` driver adapter, cached on `global` in dev.
@@ -43,6 +43,8 @@ The `@/*` alias maps to `src/*`, so these files are imported by relative path (e
 `lib/prisma.ts` imports `server-only`, so importing it from a client component fails the build. Server Components and actions must never pass raw Prisma rows to Client Components: map them to plain DTOs (see `src/app/(dashboard)/dashboard/watches/_data/watches.ts`, with the DTO types in `_data/types.ts`) and use `publicUserSelect` / `PublicUser` from `_utils/session.ts` for user data, which keeps `passwordHash` out of `getCurrentUser()`.
 
 **Data conventions:** money is stored as integer USD cents (`priceCents`, `totalCents`, `unitPriceCents`; format with `formatCents` in `src/lib/money.ts`). `User.email` and `User.username` are `citext` columns, so uniqueness is case-insensitive, and emails are trimmed and lowercased by the zod schemas. Orders outlive their user (`Order.userId` is `SetNull`, with `customerEmail` as a snapshot). Each `OrderItem` also snapshots the watch (`watchName`, `watchModel`, `brandName`, `imageKey`): checkout must fill them with `snapshotWatchForOrder` from `lib/order-snapshot.ts`, which copies the cover to `orders/`. A watch with order items can't be deleted (`OrderItem.watch` is Restrict).
+
+**Order status** only moves forward: PAID → SHIPPED → DELIVERED, or PAID → CANCELLED. Every change is a compare-and-swap (`updateMany` with the expected `status` in `where`), so the customer and an admin can't both win. Cancelling (customer or admin) must call `restockOrder` from `lib/order-stock.ts` in the same transaction, and sets `cancelledAt`; shipping sets `shippedAt`, `carrier` and `trackingNumber`. Unless the admin enters their own number, `shipOrder` generates an XII shipment number with `generateTrackingNumber()` from `lib/tracking-number.ts` (`trackingNumber` is unique, and a collision is retried). Generated numbers aren't registered with any carrier, so they're labelled "Shipment" and never linked to a carrier's tracking site. The order emails (confirmation, shipped, cancelled) are in `(app)/checkout/_utils/order-email.ts` and are sent with `after()`, so they never fail the action.
 
 The Prisma client is generated to `src/app/generated/prisma`, which is gitignored. Import types from `@/app/generated/prisma/client` and never edit the generated files. `PRISMA_WORKFLOW.md` has the full Prisma workflow.
 
@@ -63,7 +65,7 @@ How it works:
 - **Cron**: `(auth)/api/cron/cleanup/route.ts` deletes expired verification codes (hourly), and `(dashboard)/api/cron/storage-cleanup/route.ts` deletes `tmp/` uploads older than 24 h (daily). Both are scheduled in `vercel.json` and require `Authorization: Bearer $CRON_SECRET`, checked by `isCronAuthorized` in `lib/cron-auth.ts`.
 
 ### Admin data (`src/app/(dashboard)/`)
-**Layout:** each admin route (`dashboard/watches`, `dashboard/users`) keeps its code in its own private folders (`_actions`, `_data`, `_hooks`, `_server`, `_utils`), like the storefront. Code moves up to the group level only once a second route uses it:
+**Layout:** each admin route (`dashboard/watches`, `dashboard/users`, `dashboard/orders`) keeps its code in its own private folders (`_actions`, `_data`, `_hooks`, `_server`, `_utils`), like the storefront. Code moves up to the group level only once a second route uses it:
 - `_server/require-admin.ts`
 - `_utils/`: `action-result` (server), `action-client` (`unwrap`, `ActionFailure`, `toServerError`, `errorMessage`), `admin-fetch` (`getJson`, `HttpError`, `adminQueryDefaults`), `url-filters` (`hrefFor`), `search` (`escapeLike`)
 - `_hooks/use-url-filters.ts`: URL-backed list filters
@@ -75,6 +77,7 @@ The admin pages run on TanStack Query, not `revalidatePath`:
 - **First paint**: the server page prefetches under the same keys and wraps the client in `HydrationBoundary`.
 - **Writes** are still server actions, wrapped in `useMutation` in `_hooks/admin-mutations.ts` (`unwrap()` turns `{ success: false }` into a thrown `ActionFailure`). After a write, invalidate the affected keys. Admin actions must not call `revalidatePath`.
 - **Filters** live in the URL and are updated with `window.history.replaceState` (no server render). Upload progress tiles are local state, not cache.
+- **Overview** (`/dashboard`): one `getOverview({ range })` in `dashboard/_data/overview.ts` (7/30/90 days, `?range=`), cached under `["admin","overview", filters]`. Every admin write that changes orders, users, stock or brands also invalidates `overviewKeys.all()` (`dashboard/_utils/overview-keys.ts`), so add that to any new mutation that affects those numbers. Revenue never counts cancelled orders. Charts use the shadcn `chart` component (`src/components/ui/chart.tsx`, recharts).
 
 ## UI conventions
 - The UI uses shadcn/ui (style `radix-lyra`, built on the `radix-ui` package). Primitives are in `src/components/ui/`, and new ones are added via the shadcn CLI per `components.json`. Theming uses `next-themes`, and toasts use `sonner`.

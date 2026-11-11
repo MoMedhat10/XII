@@ -1,6 +1,7 @@
 "use client"
 
 import Image from "next/image"
+import Link from "next/link"
 
 import type { AdminUserDetail } from "@/app/(dashboard)/dashboard/users/_data/types"
 import type { UserActions } from "@/app/(dashboard)/dashboard/users/_hooks/mutations"
@@ -215,21 +216,26 @@ function DrawerBody({
               {recentOrders.map((o) => (
                 <li
                   key={o.id}
-                  className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 border-t-2 border-surface-variant py-2.5 first:border-t-0"
+                  className="border-t-2 border-surface-variant first:border-t-0"
                 >
-                  <span className="flex min-w-0 flex-col">
-                    <span className="truncate font-mono text-[13px] font-semibold">
-                      {o.ref}
+                  <Link
+                    href={`/dashboard/orders?q=${o.ref}`}
+                    className="group/order grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 py-2.5"
+                  >
+                    <span className="flex min-w-0 flex-col">
+                      <span className="truncate font-mono text-[13px] font-semibold group-hover/order:text-gold">
+                        {o.ref}
+                      </span>
+                      <span className="font-mono text-[11px] text-muted-foreground">
+                        {formatDay(o.createdAt)} · {o.itemCount}{" "}
+                        {o.itemCount === 1 ? "item" : "items"}
+                      </span>
                     </span>
-                    <span className="font-mono text-[11px] text-muted-foreground">
-                      {formatDay(o.createdAt)} · {o.itemCount}{" "}
-                      {o.itemCount === 1 ? "item" : "items"}
+                    <OrderStatusBadge status={o.status} />
+                    <span className="text-right font-heading font-bold tabular-nums">
+                      {formatCents(o.totalCents)}
                     </span>
-                  </span>
-                  <OrderStatusBadge status={o.status} />
-                  <span className="text-right font-heading font-bold tabular-nums">
-                    {formatCents(o.totalCents)}
-                  </span>
+                  </Link>
                 </li>
               ))}
             </ul>

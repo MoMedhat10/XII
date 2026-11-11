@@ -8,7 +8,7 @@ export type UrlFilters = { q: string; page: number } & Record<
 export const SEARCH_DEBOUNCE_MS = 300
 
 /** The URL for `filters`, leaving out every value that equals its default. */
-export function hrefFor<F extends UrlFilters>(
+export function hrefFor<F extends Record<string, string | number>>(
   pathname: string,
   filters: F,
   defaults: F

@@ -14,6 +14,7 @@ import type { WatchDrawerState } from "./types"
 import type { AdminWatch, AdminWatchPage } from "../_data/types"
 import { errorMessage, unwrap } from "../../../_utils/action-client"
 import { adminKeys, adminMutationKeys } from "../_utils/admin-keys"
+import { overviewKeys } from "../../_utils/overview-keys"
 import {
   EDITABLE_WATCH_FIELDS,
   type WatchFormInput,
@@ -78,6 +79,9 @@ function refreshWatches(queryClient: QueryClient, { brands = false } = {}) {
     last && queryClient.invalidateQueries({ queryKey: adminKeys.watches() }),
     // watch counts per brand change when watches are created, moved or deleted
     brands && queryClient.invalidateQueries({ queryKey: adminKeys.brands() }),
+    // stock alerts and catalog counts on the overview (only marked stale:
+    // nothing on this page shows it)
+    queryClient.invalidateQueries({ queryKey: overviewKeys.all() }),
   ])
 }
 
@@ -268,6 +272,9 @@ export function useDeleteBrand() {
   return useMutation({
     mutationFn: async ({ id }: { id: string }) => unwrap(await deleteBrand(id)),
     onSettled: () =>
-      queryClient.invalidateQueries({ queryKey: adminKeys.brands() }),
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: adminKeys.brands() }),
+        queryClient.invalidateQueries({ queryKey: overviewKeys.all() }),
+      ]),
   })
 }

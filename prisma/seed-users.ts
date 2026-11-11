@@ -15,6 +15,7 @@ import type { OrderStatus, Prisma } from "@/app/generated/prisma/client"
 import {
   DAY,
   SAMPLE_ADDRESS,
+  fulfilmentFor,
   buildOrderItems,
   createSeedClient,
   loadActiveWatches,
@@ -156,11 +157,13 @@ function buildUser(
         .sample(watches, rnd.int(1, 3))
         .map((w): [SeedWatch, number] => [w, rnd.chance(0.15) ? 2 : 1])
       const items = buildOrderItems(lines)
+      const status = statusFor(rnd, (now - placed.getTime()) / DAY)
       orders.push({
         customerEmail: email,
-        status: statusFor(rnd, (now - placed.getTime()) / DAY),
+        status,
         totalCents: orderTotal(items),
         createdAt: placed,
+        ...fulfilmentFor(status, placed),
         ...SAMPLE_ADDRESS,
         shipName: username.replace("_", " "),
         orderItems: {

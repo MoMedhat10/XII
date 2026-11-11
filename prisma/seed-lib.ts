@@ -1,6 +1,7 @@
 // Shared by the dev seed scripts (seed-orders.ts, seed-users.ts).
 import { PrismaPg } from "@prisma/adapter-pg"
-import { PrismaClient } from "@/app/generated/prisma/client"
+import { PrismaClient, type OrderStatus } from "@/app/generated/prisma/client"
+import { generateTrackingNumber } from "../lib/tracking-number"
 
 export const DAY = 24 * 60 * 60 * 1000
 
@@ -64,6 +65,24 @@ export function buildOrderItems(lines: [SeedWatch, number][]) {
     brandName: watch.brand.name,
     imageKey: null,
   }))
+}
+
+/**
+ * The fulfilment fields an order in `status` would have by now: shipped 2
+ * days after it was placed, delivered 4 days later, or cancelled within a few
+ * hours. Times never land in the future.
+ */
+export function fulfilmentFor(status: OrderStatus, placedAt: Date) {
+  const at = (ms: number) =>
+    new Date(Math.min(placedAt.getTime() + ms, Date.now()))
+  const shipped = status === "SHIPPED" || status === "DELIVERED"
+  return {
+    carrier: shipped ? "DHL Express" : null,
+    trackingNumber: shipped ? generateTrackingNumber() : null,
+    shippedAt: shipped ? at(2 * DAY) : null,
+    deliveredAt: status === "DELIVERED" ? at(6 * DAY) : null,
+    cancelledAt: status === "CANCELLED" ? at(DAY / 4) : null,
+  }
 }
 
 export const orderTotal = (

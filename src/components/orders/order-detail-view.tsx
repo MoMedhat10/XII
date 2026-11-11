@@ -120,11 +120,36 @@ export function OrderDetailView({
               <dt>Insured courier</dt>
               <dd className="font-semibold text-gold">Complimentary</dd>
             </div>
+            {order.shippedLabel && (
+              <div className={summaryRow}>
+                <dt>Shipped</dt>
+                <dd className="text-muted-foreground">{order.shippedLabel}</dd>
+              </div>
+            )}
+            {order.deliveredLabel && (
+              <div className={summaryRow}>
+                <dt>Delivered</dt>
+                <dd className="text-muted-foreground">
+                  {order.deliveredLabel}
+                </dd>
+              </div>
+            )}
             <div className={summaryRow}>
               <dt>Last update</dt>
               <dd className="text-muted-foreground">{order.updatedLabel}</dd>
             </div>
           </dl>
+
+          {order.tracking && (
+            <div className="mx-6 mt-6 border-2 border-surface-variant px-4 py-3">
+              <span className={cn(monoCaption, "mb-1 block uppercase")}>
+                Shipment · {order.tracking.carrier}
+              </span>
+              <span className="block font-mono text-sm font-semibold break-all select-all">
+                {order.tracking.number}
+              </span>
+            </div>
+          )}
 
           <div className="mx-6 mt-6 flex items-baseline justify-between gap-4 border-t-4 pt-4">
             <span className="font-heading text-sm font-bold tracking-[1.5px] uppercase">

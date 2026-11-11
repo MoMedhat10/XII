@@ -224,6 +224,13 @@ model Order {
   shipCountry    String? // ISO 3166-1 alpha-2
   // One per checkout attempt, so a double click or retry can't create two orders
   checkoutKey    String?     @unique
+  // Fulfilment, set by admins. Each timestamp is when the order reached
+  // that status; carrier and tracking are filled when it ships.
+  carrier        String?
+  trackingNumber String?     @unique
+  shippedAt      DateTime?
+  deliveredAt    DateTime?
+  cancelledAt    DateTime?
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 
@@ -231,6 +238,9 @@ model Order {
   orderItems OrderItem[]
 
   @@index([userId, createdAt])
+  // the admin orders list: all orders, newest first, optionally by status
+  @@index([status, createdAt])
+  @@index([createdAt])
 }
 
 model OrderItem {

@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/app/(auth)/_utils/session"
 
 import prisma from "../../../../../lib/prisma"
 import { logger } from "../../../../../lib/pino"
+import { restockOrder } from "../../../../../lib/order-stock"
 import { orderRef } from "../_utils/order-format"
 import {
   cancelOrderSchema,
@@ -30,22 +31,11 @@ export async function cancelOrder(
       // shipped at the same moment: only one of the two updates can match.
       const { count } = await tx.order.updateMany({
         where: { id: orderId, userId: user.id, status: "PAID" },
-        data: { status: "CANCELLED" },
+        data: { status: "CANCELLED", cancelledAt: new Date() },
       })
       if (!count) return false
 
-      // Checkout takes stock when the order is placed, so cancelling gives
-      // it back.
-      const items = await tx.orderItem.findMany({
-        where: { orderId },
-        select: { watchId: true, quantity: true },
-      })
-      for (const { watchId, quantity } of items) {
-        await tx.watch.update({
-          where: { id: watchId },
-          data: { stock: { increment: quantity }, version: { increment: 1 } },
-        })
-      }
+      await restockOrder(tx, orderId)
       return true
     })
 

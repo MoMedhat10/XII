@@ -57,4 +57,8 @@ export type OrderDetail = {
   canCancel: boolean
   /** null for orders placed before checkout stored an address */
   shipping: { name: string; phone: string | null; lines: string[] } | null
+  /** set by an admin when the order ships */
+  tracking: { carrier: string; number: string } | null
+  shippedLabel: string | null
+  deliveredLabel: string | null
 }
