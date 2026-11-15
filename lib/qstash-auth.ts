@@ -1,18 +1,19 @@
 import "server-only"
 import { Receiver } from "@upstash/qstash"
 
+import { getAppUrl } from "./app-url"
 import { logger } from "./pino"
 
 export const JOBS_PATH = "/api/jobs"
 export const JOBS_FAILED_PATH = "/api/jobs/failed"
 
 /**
- * The public URL QStash calls for `path`, from APP_URL. Publishing and
+ * The public URL QStash calls for `path`, from `getAppUrl()`. Publishing and
  * verifying both use it, so a signature only matches the endpoint it was
- * published to. Null when APP_URL isn't set.
+ * published to. Null when there is no app URL.
  */
 export function qstashUrl(path: string) {
-  const base = process.env.APP_URL?.replace(/\/$/, "")
+  const base = getAppUrl()
   return base ? `${base}${path}` : null
 }
 
@@ -29,7 +30,7 @@ function getReceiver() {
 /**
  * Reads the body of a request QStash signed (`Upstash-Signature`) for the
  * endpoint at `path`, or returns null when the signature is missing, invalid,
- * or was issued for another URL. Missing signing keys or APP_URL reject
+ * or was issued for another URL. Missing signing keys or app URL reject
  * everything (fails closed). A signature can be replayed for 5 minutes, which
  * is harmless here because every job is idempotent.
  */

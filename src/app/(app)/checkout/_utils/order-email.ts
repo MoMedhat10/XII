@@ -3,6 +3,7 @@ import { Resend } from "resend"
 
 import { formatPrice } from "@/components/dashboard/watches/watch-utils"
 
+import { getAppUrl } from "../../../../../lib/app-url"
 import { EMAIL_FROM } from "../../../../../lib/email-from"
 import prisma from "../../../../../lib/prisma"
 import {
@@ -61,7 +62,7 @@ function addressLines(order: EmailOrder) {
 }
 
 const orderLink = (orderId: string) => {
-  const appUrl = process.env.APP_URL?.replace(/\/$/, "")
+  const appUrl = getAppUrl()
   return appUrl ? `${appUrl}/orders/${orderId}` : null
 }
 

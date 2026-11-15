@@ -26,7 +26,7 @@ npx prisma studio
 
 There is no test framework set up yet.
 
-Environment variables (`.env`, loaded by `prisma.config.ts` via `dotenv/config`; `.env.example` lists every one, so add new variables there too): the `S3_*` storage settings, `DATABASE_URL`, `REDIS_URL`, `RESEND_API_KEY`, `CRON_SECRET`, `QSTASH_TOKEN`, `QSTASH_CURRENT_SIGNING_KEY`, `QSTASH_NEXT_SIGNING_KEY`, `APP_URL` (absolute site URL, used for links in order emails and as the base URL QStash calls), and optionally `LOG_LEVEL`, `EMAIL_FROM` (sender on a domain verified in Resend; without it emails use Resend's sandbox sender, which only delivers to the Resend account owner) and `QSTASH_URL` (only for the local QStash dev server: `npx @upstash/qstash-cli dev`, which prints a local token and signing keys).
+Environment variables (`.env`, loaded by `prisma.config.ts` via `dotenv/config`; `.env.example` lists every one, so add new variables there too): the `S3_*` storage settings, `DATABASE_URL`, `REDIS_URL`, `RESEND_API_KEY`, `CRON_SECRET`, `QSTASH_TOKEN`, `QSTASH_CURRENT_SIGNING_KEY`, `QSTASH_NEXT_SIGNING_KEY`, `APP_URL` (absolute site URL, used for links in order emails and as the base URL QStash calls; read it through `getAppUrl()` in `lib/app-url.ts`, which falls back to Vercel's `VERCEL_PROJECT_PRODUCTION_URL` and warns when the two differ, so it's optional on Vercel), and optionally `LOG_LEVEL`, `EMAIL_FROM` (sender on a domain verified in Resend; without it emails use Resend's sandbox sender, which only delivers to the Resend account owner) and `QSTASH_URL` (the QStash endpoint: your region's URL from the Upstash console in production, e.g. `https://qstash-eu-central-1.upstash.io`, or `http://127.0.0.1:8080` for the local dev server `npx @upstash/qstash-cli dev`, which prints a local token and signing keys; never deploy the local one).
 
 ## Architecture
 
@@ -34,7 +34,7 @@ Environment variables (`.env`, loaded by `prisma.config.ts` via `dotenv/config`;
 `README.md` and `implementation_plan.md` describe the full storefront (catalog, product pages at `/timepieces/[slug]`, finder, compare, cart, …). **Most of it isn't built yet.** What exists now is the auth system, the admin dashboard (overview, watches, users, orders), the home page, and the Prisma schema, which already models the commerce domain (`Brand`, `Watch`, `WatchImage`, `FavoriteWatch`, `Cart`/`CartItem`, `Order`/`OrderItem`).
 
 ### Shared server singletons live in the root `lib/`, not `src/lib/`
-- `lib/prisma.ts`: a `PrismaClient` using the `@prisma/adapter-pg` driver adapter, cached on `global` in dev.
+- `lib/prisma.ts`: a `PrismaClient` using the `@prisma/adapter-pg` driver adapter over a small `pg` pool (`max: 5`, registered with Vercel's `attachDatabasePool`), cached on `global` in dev. The database allows only 50 connections, so the deployed app's `DATABASE_URL` must use the **pooled** host `pooled.db.prisma.io`; local `.env` and `prisma migrate` use the direct `db.prisma.io`. Both use `sslmode=verify-full`.
 - `lib/redis.ts`: a node-redis client, cached on `globalThis`. Always get it with `await getRedis()`, which connects lazily.
 - `lib/pino.ts`: the `logger` (uses pino-pretty in development). Use it instead of `console`.
 
