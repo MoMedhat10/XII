@@ -25,7 +25,7 @@ export function WishlistView(page: WishlistPage) {
   if (!w.items.length) return <WishlistEmpty />
   return (
     <>
-      <section className={cn(gutter, "pt-20 pb-56 sm:pt-28 sm:pb-40")}>
+      <section className={cn(gutter, "pt-12 pb-56 sm:pt-16 sm:pb-40")}>
         <WishlistHeader count={w.count} totalCents={w.totalCents} />
         <WishlistTableHead
           allSelected={w.allSelected}

@@ -103,3 +103,13 @@ export async function getCartPage(userId: string): Promise<CartPage> {
   const lines = rows.map(toCartLine)
   return { lines, picks: lines.length ? [] : await getPicks(userId) }
 }
+
+/**
+ * Distinct watches in the user's bag, for the header badge. Counts watches,
+ * not quantity: every action that adds or removes a watch calls refresh(),
+ * while quantity changes deliberately don't, so this never goes stale.
+ */
+export const getBagCount = (userId: string) =>
+  prisma.cartItem.count({
+    where: { cart: { userId }, watch: buyableWatch },
+  })

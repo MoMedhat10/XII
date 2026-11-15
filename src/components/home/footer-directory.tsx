@@ -4,15 +4,42 @@ import { gutter, labelCaps } from "./styles"
 import { ScrollLink } from "./scroll-link"
 
 const columns = [
-  { title: "Shop", links: ["All Timepieces", "Compare", "Wishlist", "Bag"] },
-  { title: "Tools", links: ["Timepiece Advisor", "Size Guide"] },
-  { title: "House", links: ["Craft & Manifesto", "Journal"] },
-  { title: "Service", links: ["Armored Courier", "Currency", "Contact"] },
+  {
+    title: "Shop",
+    links: [
+      { label: "All Timepieces", href: "/watches" },
+      { label: "Compare", href: "/compare" },
+    ],
+  },
+  {
+    // these pages send guests to sign in, so the column suits everyone
+    title: "Your Account",
+    links: [
+      { label: "Bag", href: "/cart" },
+      { label: "Wishlist", href: "/wishlist" },
+      { label: "Orders", href: "/orders" },
+    ],
+  },
+  {
+    title: "House",
+    links: [
+      { label: "Size Guide", href: "/#advisor" },
+      { label: "Craft & Manifesto", href: "/#craft" },
+    ],
+  },
 ]
 
-export function Footer() {
+/**
+ * The home page's closing directory: newsletter, site links and the giant
+ * wordmark. The layout's SiteFooter strip follows it.
+ */
+export function FooterDirectory() {
   return (
-    <footer id="footer" className="border-t-4 bg-background">
+    <section
+      id="footer"
+      aria-label="Directory"
+      className="border-t-4 bg-background"
+    >
       <div className={cn(gutter, "pt-24")}>
         <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,180px),1fr))] gap-x-8 gap-y-12 pb-16">
           <div className="col-span-2 flex max-w-[440px] min-w-0 flex-col gap-4">
@@ -48,11 +75,11 @@ export function Footer() {
               </span>
               {col.links.map((link) => (
                 <ScrollLink
-                  key={link}
-                  href="/#top"
+                  key={link.href}
+                  href={link.href}
                   className="font-sans text-base leading-6 text-foreground transition-colors hover:text-gold"
                 >
-                  {link}
+                  {link.label}
                 </ScrollLink>
               ))}
             </div>
@@ -66,19 +93,6 @@ export function Footer() {
           XII
         </div>
       </div>
-
-      <div className="border-t-4">
-        <div
-          className={cn(
-            gutter,
-            "flex flex-wrap justify-between gap-4 py-6 font-mono text-[11px] tracking-[.2em] text-muted-foreground uppercase"
-          )}
-        >
-          <span>© 2026 XII — The Luxury Timepiece Archive</span>
-          <span>Armored courier · Ferrari Group / Malca-Amit</span>
-          <span>USD $ · EUR € · GBP £ · CHF Fr · JPY ¥</span>
-        </div>
-      </div>
-    </footer>
+    </section>
   )
 }

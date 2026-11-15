@@ -18,7 +18,7 @@ export function OrdersView(page: OrdersPage) {
   const statusQuery = page.status ? `&status=${page.status}` : ""
 
   return (
-    <section className={cn(gutter, "pt-20 pb-40 sm:pt-28")}>
+    <section className={cn(gutter, "pt-12 pb-40 sm:pt-16")}>
       <OrdersHeader
         count={page.counts.ALL}
         lifetimeCents={page.lifetimeCents}

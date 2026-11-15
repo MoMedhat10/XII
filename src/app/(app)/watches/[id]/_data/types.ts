@@ -10,6 +10,7 @@ export type WatchDetail = {
   id: string
   name: string
   brand: string
+  brandId: string
   model: string
   priceCents: number
   stock: number

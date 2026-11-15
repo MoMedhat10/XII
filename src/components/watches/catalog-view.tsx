@@ -40,7 +40,7 @@ export function CatalogView() {
 
   return (
     <>
-      <section className={cn(gutter, "pt-20 sm:pt-28")}>
+      <section className={cn(gutter, "pt-12 sm:pt-16")}>
         <CatalogToolbar
           total={results.total}
           sort={f.filters.sort}

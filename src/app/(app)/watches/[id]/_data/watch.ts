@@ -19,7 +19,7 @@ export const detailSelect = {
   caliber: true,
   caseMaterial: true,
   condition: true,
-  brand: { select: { name: true } },
+  brand: { select: { id: true, name: true } },
   images: { select: { key: true, alt: true }, orderBy: { sortOrder: "asc" } },
 } satisfies Prisma.WatchSelect
 
@@ -32,6 +32,7 @@ export const toWatchDetail = ({
 }: WatchDetailRow): WatchDetail => ({
   ...w,
   brand: brand.name,
+  brandId: brand.id,
   images: images.map((i) => ({ url: getPublicUrl(i.key), alt: i.alt })),
 })
 

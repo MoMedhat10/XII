@@ -9,7 +9,7 @@ export function CompareLoading() {
     <section
       aria-busy="true"
       aria-label="Loading comparison"
-      className={cn(gutter, "pt-20 pb-30 sm:pt-28")}
+      className={cn(gutter, "pt-12 pb-30 sm:pt-16")}
     >
       <div className="flex flex-col gap-4 border-b-4 pb-6 sm:pb-8">
         <div className={cn(block, "h-5 w-32")} />

@@ -9,7 +9,7 @@ export function CheckoutLoading() {
     <section
       aria-busy="true"
       aria-label="Loading checkout"
-      className={cn(gutter, "pt-20 pb-24 sm:pt-28")}
+      className={cn(gutter, "pt-12 pb-24 sm:pt-16")}
     >
       <div className="flex flex-col gap-4 border-b-4 pb-6 sm:pb-8">
         <div className={cn(block, "h-5 w-40")} />

@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 /** Shown when the id is unknown or the watch was withdrawn. */
 export function WatchNotFound() {
   return (
-    <section className={cn(gutter, "pt-20 pb-30 sm:pt-28")}>
+    <section className={cn(gutter, "pt-12 pb-30 sm:pt-16")}>
       <div className="relative flex flex-col items-center gap-5 overflow-hidden border-4 border-foreground bg-[#141515] px-8 py-30 text-center">
         <svg
           viewBox="0 0 400 400"

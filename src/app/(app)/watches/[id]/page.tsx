@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import { getCurrentUser } from "@/app/(auth)/_utils/session"
 
 import { gutter } from "@/components/home/styles"
+import { WatchBreadcrumb } from "@/components/watch/watch-breadcrumb"
 import { WatchBuyPanel } from "@/components/watch/watch-buy-panel"
 import { WatchDetails } from "@/components/watch/watch-details"
 import { WatchGallery } from "@/components/watch/watch-gallery"
@@ -45,10 +46,15 @@ export default async function WatchPage({
 
   return (
     <>
+      <WatchBreadcrumb
+        brand={watch.brand}
+        brandId={watch.brandId}
+        name={watch.name}
+      />
       <section
         className={cn(
           gutter,
-          "flex flex-col gap-10 pt-20 sm:pt-28 lg:flex-row lg:items-start"
+          "flex flex-col gap-10 pt-6 sm:pt-8 lg:flex-row lg:items-start"
         )}
       >
         <WatchGallery

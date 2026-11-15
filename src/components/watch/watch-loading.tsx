@@ -11,7 +11,7 @@ export function WatchLoading() {
       aria-label="Loading watch"
       className={cn(
         gutter,
-        "flex flex-col gap-10 pt-20 pb-30 sm:pt-28 lg:flex-row lg:items-start"
+        "flex flex-col gap-10 pt-12 pb-30 sm:pt-16 lg:flex-row lg:items-start"
       )}
     >
       <div className="flex min-w-0 gap-4 lg:flex-1">

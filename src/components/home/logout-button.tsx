@@ -8,20 +8,13 @@ import { toast } from "sonner"
 import { logout } from "@/app/(auth)/_actions"
 import { cn } from "@/lib/utils"
 
-export function LogoutButton({
-  className,
-  children = "Logout",
-  title,
-}: {
-  className?: string
-  children?: React.ReactNode
-  title?: string
-}) {
+/** Signs out, drops the previous user's cached data and re-renders the page. */
+export function useLogout() {
   const router = useRouter()
   const queryClient = useQueryClient()
   const [pending, startTransition] = useTransition()
 
-  const handleLogout = () => {
+  const signOut = () => {
     startTransition(async () => {
       const result = await logout()
 
@@ -37,10 +30,24 @@ export function LogoutButton({
     })
   }
 
+  return { signOut, pending }
+}
+
+export function LogoutButton({
+  className,
+  children = "Logout",
+  title,
+}: {
+  className?: string
+  children?: React.ReactNode
+  title?: string
+}) {
+  const { signOut, pending } = useLogout()
+
   return (
     <button
       type="button"
-      onClick={handleLogout}
+      onClick={signOut}
       disabled={pending}
       title={title}
       className={cn(className, "cursor-pointer disabled:opacity-50")}

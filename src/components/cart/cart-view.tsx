@@ -33,7 +33,7 @@ export function CartView(page: CartPage) {
   }
 
   return (
-    <section className={cn(gutter, "pt-20 pb-24 sm:pt-28 sm:pb-32")}>
+    <section className={cn(gutter, "pt-12 pb-24 sm:pt-16 sm:pb-32")}>
       <CartHeader pieces={cart.pieces} />
 
       <div className="flex flex-col gap-10 pt-2 lg:flex-row lg:items-start lg:gap-12">

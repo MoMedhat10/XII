@@ -24,7 +24,7 @@ export function OrderDetailView({
   const total = formatPrice(order.totalCents)
 
   return (
-    <section className={cn(gutter, "pt-20 pb-40 sm:pt-28")}>
+    <section className={cn(gutter, "pt-12 pb-40 sm:pt-16")}>
       {placed && (
         <div
           role="status"

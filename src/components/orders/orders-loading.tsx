@@ -12,7 +12,7 @@ export function OrdersLoading() {
     <section
       aria-busy="true"
       aria-label="Loading your orders"
-      className={cn(gutter, "pt-20 pb-40 sm:pt-28")}
+      className={cn(gutter, "pt-12 pb-40 sm:pt-16")}
     >
       <div className="flex flex-wrap items-end justify-between gap-6 border-b-4 pb-6 sm:gap-8 sm:pb-8">
         <div className="flex flex-col gap-4">

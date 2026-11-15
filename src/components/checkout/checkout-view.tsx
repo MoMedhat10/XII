@@ -115,7 +115,7 @@ export function CheckoutView({ lines, subtotalCents, email }: CheckoutPage) {
       : null
 
   return (
-    <section className={cn(gutter, "pt-20 pb-24 sm:pt-28 sm:pb-32")}>
+    <section className={cn(gutter, "pt-12 pb-24 sm:pt-16 sm:pb-32")}>
       <div className="border-b-4 pb-6 sm:pb-8">
         <span className={cn(eyebrow, "mb-2")}>Secure Checkout</span>
         <h1 className="font-heading text-[clamp(36px,6vw,88px)] leading-none font-bold tracking-[-0.02em]">

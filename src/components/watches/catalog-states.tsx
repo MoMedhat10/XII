@@ -126,7 +126,7 @@ export function CatalogError({
 /** Suspense fallback for the whole page while the URL is read on the client. */
 export function CatalogPageFallback() {
   return (
-    <div className="mx-auto max-w-[1440px] px-[clamp(24px,4.4vw,64px)] pt-20 pb-30 sm:pt-28">
+    <div className="mx-auto max-w-[1440px] px-[clamp(24px,4.4vw,64px)] pt-12 pb-30 sm:pt-16">
       <div className="mb-8 flex flex-col gap-3">
         <span className="h-6 w-32 animate-[xii-pulse_1.4s_ease-in-out_infinite] bg-card" />
         <span className="h-[clamp(48px,6vw,88px)] w-[min(520px,80vw)] animate-[xii-pulse_1.4s_ease-in-out_infinite] bg-card" />

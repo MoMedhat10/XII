@@ -17,6 +17,9 @@ export function WishlistHeader({
         <h1 className="font-heading text-[clamp(36px,6vw,88px)] leading-none font-bold tracking-[-0.02em]">
           Saved Pieces
         </h1>
+        <p className={cn(monoCaption, "mt-3 uppercase")}>
+          Saved pieces are held for 30 days
+        </p>
       </div>
       <div className="grid w-full grid-cols-2 border-4 sm:w-auto">
         <div className="border-r-4 px-4 py-3 sm:min-w-40 sm:px-6 sm:py-4">

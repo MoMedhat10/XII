@@ -74,7 +74,7 @@ export function CompareView({
   }
 
   return (
-    <section className={cn(gutter, "pt-20 pb-30 sm:pt-28")}>
+    <section className={cn(gutter, "pt-12 pb-30 sm:pt-16")}>
       <div className="flex flex-wrap items-end justify-between gap-6 border-b-4 pb-6 sm:pb-8">
         <div>
           <span className={cn(eyebrow, "mb-2")}>Side by Side</span>
