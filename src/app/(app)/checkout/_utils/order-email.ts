@@ -3,6 +3,7 @@ import { Resend } from "resend"
 
 import { formatPrice } from "@/components/dashboard/watches/watch-utils"
 
+import { EMAIL_FROM } from "../../../../../lib/email-from"
 import prisma from "../../../../../lib/prisma"
 import {
   formatShipping,
@@ -175,7 +176,7 @@ async function send(
   const resend = new Resend(process.env.RESEND_API_KEY)
   const { error } = await resend.emails.send(
     {
-      from: "Test <onboarding@resend.dev>",
+      from: EMAIL_FROM,
       to: [order.customerEmail],
       subject,
       html,

@@ -1,5 +1,7 @@
 import { Resend } from 'resend'
 
+import { EMAIL_FROM } from '../../../../lib/email-from'
+
 
 
 export const sendOTPEmail = async ({email , code , template}: {email: string , code: string , template: (OPT: string) => string}) => {
@@ -7,7 +9,7 @@ export const sendOTPEmail = async ({email , code , template}: {email: string , c
 
      const resend = new Resend(process.env.RESEND_API_KEY);
      const { error } = await resend.emails.send({
-        from: 'Test <onboarding@resend.dev>',
+        from: EMAIL_FROM,
         to: [email],
         subject: "XII Verification Code",
         html: template(code)

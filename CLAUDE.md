@@ -26,7 +26,7 @@ npx prisma studio
 
 There is no test framework set up yet.
 
-Environment variables (`.env`, loaded by `prisma.config.ts` via `dotenv/config`; `.env.example` lists every one, so add new variables there too): the `S3_*` storage settings, `DATABASE_URL`, `REDIS_URL`, `RESEND_API_KEY`, `CRON_SECRET`, `QSTASH_TOKEN`, `QSTASH_CURRENT_SIGNING_KEY`, `QSTASH_NEXT_SIGNING_KEY`, `APP_URL` (absolute site URL, used for links in order emails and as the base URL QStash calls), and optionally `LOG_LEVEL` and `QSTASH_URL` (only for the local QStash dev server: `npx @upstash/qstash-cli dev`, which prints a local token and signing keys).
+Environment variables (`.env`, loaded by `prisma.config.ts` via `dotenv/config`; `.env.example` lists every one, so add new variables there too): the `S3_*` storage settings, `DATABASE_URL`, `REDIS_URL`, `RESEND_API_KEY`, `CRON_SECRET`, `QSTASH_TOKEN`, `QSTASH_CURRENT_SIGNING_KEY`, `QSTASH_NEXT_SIGNING_KEY`, `APP_URL` (absolute site URL, used for links in order emails and as the base URL QStash calls), and optionally `LOG_LEVEL`, `EMAIL_FROM` (sender on a domain verified in Resend; without it emails use Resend's sandbox sender, which only delivers to the Resend account owner) and `QSTASH_URL` (only for the local QStash dev server: `npx @upstash/qstash-cli dev`, which prints a local token and signing keys).
 
 ## Architecture
 
@@ -71,7 +71,7 @@ How it works:
 - **Rate limiting**: `_utils/rateLimit.ts` runs an atomic fixed-window counter in Redis through a Lua script. Keys look like `register:user:<email>` and `otp:email-verification:<userId>`. There are two modes, and the choice is deliberate:
   - `rateLimitOrThrow` **fails closed**. It throws `ServiceUnavailableError` if Redis is down, and the action surfaces that error's message.
   - `rateLimit` wrapped in its own try/catch **fails open**. Login uses this so a Redis outage doesn't lock users out.
-- **Cron**: `(auth)/api/cron/cleanup/route.ts` deletes expired verification codes (hourly), and `(dashboard)/api/cron/storage-cleanup/route.ts` deletes `tmp/` uploads older than 24 h (daily). Both are scheduled in `vercel.json` and require `Authorization: Bearer $CRON_SECRET`, checked by `isCronAuthorized` in `lib/cron-auth.ts`.
+- **Cron**: `(auth)/api/cron/cleanup/route.ts` deletes expired verification codes (daily, because Vercel Hobby crons run at most once a day; codes are also checked for expiry on use), and `(dashboard)/api/cron/storage-cleanup/route.ts` deletes `tmp/` uploads older than 24 h (daily). Both are scheduled in `vercel.json` and require `Authorization: Bearer $CRON_SECRET`, checked by `isCronAuthorized` in `lib/cron-auth.ts`.
 
 ### Admin data (`src/app/(dashboard)/`)
 **Layout:** each admin route (`dashboard/watches`, `dashboard/users`, `dashboard/orders`) keeps its code in its own private folders (`_actions`, `_data`, `_hooks`, `_server`, `_utils`), like the storefront. Code moves up to the group level only once a second route uses it:
