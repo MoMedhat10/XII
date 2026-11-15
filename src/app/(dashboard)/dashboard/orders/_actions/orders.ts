@@ -1,13 +1,8 @@
 "use server"
 
-import { after } from "next/server"
-
 import { Prisma, type OrderStatus } from "@/app/generated/prisma/client"
-import {
-  sendOrderCancelled,
-  sendOrderShipped,
-} from "@/app/(app)/checkout/_utils/order-email"
 import { orderRef } from "@/app/(app)/orders/_utils/order-format"
+import { enqueueOrderEmail } from "../../../../../../lib/jobs"
 import { logger } from "../../../../../../lib/pino"
 import prisma from "../../../../../../lib/prisma"
 import { restockOrder } from "../../../../../../lib/order-stock"
@@ -90,7 +85,7 @@ export async function shipOrder(
           { adminId: admin.id, orderId: id, action: "ship", generated },
           "admin order action"
         )
-        after(() => sendOrderShipped(id))
+        enqueueOrderEmail("shipped", id)
         return {
           success: true,
           message: `${orderRef(id)} marked shipped`,
@@ -165,7 +160,7 @@ export async function cancelOrderAsAdmin(
     if (restocked === null) return missedSwap(id)
 
     audit(admin.id, id, "cancel")
-    after(() => sendOrderCancelled(id))
+    enqueueOrderEmail("cancelled", id)
     return {
       success: true,
       message: `${orderRef(id)} cancelled`,

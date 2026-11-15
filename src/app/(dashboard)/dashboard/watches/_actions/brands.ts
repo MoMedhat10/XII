@@ -3,11 +3,8 @@
 import { Prisma } from "@/app/generated/prisma/client"
 import prisma from "../../../../../../lib/prisma"
 import { logger } from "../../../../../../lib/pino"
-import {
-  createPresignedPut,
-  deleteObjects,
-  moveObject,
-} from "../../../../../../lib/storage"
+import { deleteObjectsOrRetry } from "../../../../../../lib/jobs"
+import { createPresignedPut, moveObject } from "../../../../../../lib/storage"
 import { requireAdmin } from "../../../_server/require-admin"
 import { verifyUploadedImage } from "../_server/verify-upload"
 import {
@@ -37,11 +34,10 @@ async function promoteLogo(tmpKey: string) {
   return key
 }
 
+/** Deletes a logo file; a failed delete is queued and retried. Never throws. */
 async function removeObject(key: string | null | undefined) {
   if (!key) return
-  await deleteObjects([key]).catch((error) =>
-    logger.warn({ error, key }, "logo delete failed; cron will sweep")
-  )
+  await deleteObjectsOrRetry([key])
 }
 
 function prismaFail(error: unknown, where: string) {

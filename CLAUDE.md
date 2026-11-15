@@ -26,7 +26,7 @@ npx prisma studio
 
 There is no test framework set up yet.
 
-Environment variables (`.env`, loaded by `prisma.config.ts` via `dotenv/config`): `DATABASE_URL`, `REDIS_URL`, `RESEND_API_KEY`, `CRON_SECRET`, and optionally `LOG_LEVEL` and `APP_URL` (absolute site URL, used for links in order emails).
+Environment variables (`.env`, loaded by `prisma.config.ts` via `dotenv/config`; `.env.example` lists every one, so add new variables there too): the `S3_*` storage settings, `DATABASE_URL`, `REDIS_URL`, `RESEND_API_KEY`, `CRON_SECRET`, `QSTASH_TOKEN`, `QSTASH_CURRENT_SIGNING_KEY`, `QSTASH_NEXT_SIGNING_KEY`, `APP_URL` (absolute site URL, used for links in order emails and as the base URL QStash calls), and optionally `LOG_LEVEL` and `QSTASH_URL` (only for the local QStash dev server: `npx @upstash/qstash-cli dev`, which prints a local token and signing keys).
 
 ## Architecture
 
@@ -44,9 +44,18 @@ The `@/*` alias maps to `src/*`, so these files are imported by relative path (e
 
 **Data conventions:** money is stored as integer USD cents (`priceCents`, `totalCents`, `unitPriceCents`; format with `formatCents` in `src/lib/money.ts`). `User.email` and `User.username` are `citext` columns, so uniqueness is case-insensitive, and emails are trimmed and lowercased by the zod schemas. Orders outlive their user (`Order.userId` is `SetNull`, with `customerEmail` as a snapshot). Each `OrderItem` also snapshots the watch (`watchName`, `watchModel`, `brandName`, `imageKey`): checkout must fill them with `snapshotWatchForOrder` from `lib/order-snapshot.ts`, which copies the cover to `orders/`. A watch with order items can't be deleted (`OrderItem.watch` is Restrict).
 
-**Order status** only moves forward: PAID → SHIPPED → DELIVERED, or PAID → CANCELLED. Every change is a compare-and-swap (`updateMany` with the expected `status` in `where`), so the customer and an admin can't both win. Cancelling (customer or admin) must call `restockOrder` from `lib/order-stock.ts` in the same transaction, and sets `cancelledAt`; shipping sets `shippedAt`, `carrier` and `trackingNumber`. Unless the admin enters their own number, `shipOrder` generates an XII shipment number with `generateTrackingNumber()` from `lib/tracking-number.ts` (`trackingNumber` is unique, and a collision is retried). Generated numbers aren't registered with any carrier, so they're labelled "Shipment" and never linked to a carrier's tracking site. The order emails (confirmation, shipped, cancelled) are in `(app)/checkout/_utils/order-email.ts` and are sent with `after()`, so they never fail the action.
+**Order status** only moves forward: PAID → SHIPPED → DELIVERED, or PAID → CANCELLED. Every change is a compare-and-swap (`updateMany` with the expected `status` in `where`), so the customer and an admin can't both win. Cancelling (customer or admin) must call `restockOrder` from `lib/order-stock.ts` in the same transaction, and sets `cancelledAt`; shipping sets `shippedAt`, `carrier` and `trackingNumber`. Unless the admin enters their own number, `shipOrder` generates an XII shipment number with `generateTrackingNumber()` from `lib/tracking-number.ts` (`trackingNumber` is unique, and a collision is retried). Generated numbers aren't registered with any carrier, so they're labelled "Shipment" and never linked to a carrier's tracking site. The order emails (confirmation, shipped, cancelled) are in `(app)/checkout/_utils/order-email.ts` and are queued with `enqueueOrderEmail` from `lib/jobs.ts` (see Background jobs), so they never fail the action. Both admin and customer cancels send the cancelled email.
 
 The Prisma client is generated to `src/app/generated/prisma`, which is gitignored. Import types from `@/app/generated/prisma/client` and never edit the generated files. `PRISMA_WORKFLOW.md` has the full Prisma workflow.
+
+### Background jobs (`lib/jobs.ts`, Upstash QStash)
+The app runs serverless on Vercel, so there is no long-running worker. QStash POSTs each job to `src/app/api/jobs/route.ts`, which checks the signature (`readQStashBody` in `lib/qstash-auth.ts`, bound to the URL built from `APP_URL`, so a signature for another endpoint is rejected) and calls `runJob`. A 2xx response marks the job done; anything else is retried 5 times with backoff, after which QStash calls `api/jobs/failed`, which logs the job at error level.
+- Jobs are a zod discriminated union (`jobSchema`): `order.email` and `storage.delete`. To add one, extend the schema and `runJob`.
+- Handlers must be **idempotent** and must **throw** to be retried. Order emails pass a Resend `idempotencyKey`, and each publish has a QStash `deduplicationId` (which must not contain `:`, QStash rejects it with a 400; use `-`).
+- Actions call `enqueue` / `enqueueOrderEmail` (runs in `after()`) **after** the transaction commits, never inside it.
+- Storage deletes of saved files go through `deleteObjectsOrRetry`: it deletes inline and only queues a retry when that fails.
+- If QStash is unconfigured or unreachable, `publishJob` runs the job inline (no retries) instead, so the app still works without it.
+- OTP emails stay synchronous on purpose, because the user is waiting for the code.
 
 ### Auth (`src/app/(auth)/`)
 Custom session auth built without an auth library. Everything sits inside the route group:

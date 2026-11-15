@@ -4,6 +4,7 @@ import { refresh } from "next/cache"
 import { getCurrentUser } from "@/app/(auth)/_utils/session"
 
 import prisma from "../../../../../lib/prisma"
+import { enqueueOrderEmail } from "../../../../../lib/jobs"
 import { logger } from "../../../../../lib/pino"
 import { restockOrder } from "../../../../../lib/order-stock"
 import { orderRef } from "../_utils/order-format"
@@ -14,7 +15,10 @@ import {
 
 type CancelOrderRes = { success: boolean; message: string }
 
-/** Cancels one of the user's orders while it's still PAID (not shipped). */
+/**
+ * Cancels one of the user's orders while it's still PAID (not shipped), puts
+ * the stock back and emails the customer.
+ */
 export async function cancelOrder(
   input: CancelOrderInput
 ): Promise<CancelOrderRes> {
@@ -56,6 +60,7 @@ export async function cancelOrder(
       }
     }
 
+    enqueueOrderEmail("cancelled", orderId)
     refresh()
     return { success: true, message: `Order ${orderRef(orderId)} cancelled` }
   } catch (error) {

@@ -4,7 +4,6 @@ import { Resend } from "resend"
 import { formatPrice } from "@/components/dashboard/watches/watch-utils"
 
 import prisma from "../../../../../lib/prisma"
-import { logger } from "../../../../../lib/pino"
 import {
   formatShipping,
   shippingSelect,
@@ -12,8 +11,10 @@ import {
 import { orderRef } from "../../orders/_utils/order-format"
 
 // The three order emails: confirmation (checkout), shipped and cancelled
-// (admin). Each runs after the response, so it never fails or delays the
-// action that sent it; problems are only logged.
+// (admin or customer). They run as background jobs (`lib/jobs.ts`), so they
+// never fail or delay the action that queued them. Sending throws on any
+// failure so the job is retried, and the idempotency key makes a retry or a
+// duplicate job send at most one email.
 
 /** Customer-entered text goes into HTML, so it's always escaped. */
 const escapeHtml = (value: string) =>
@@ -162,29 +163,32 @@ ${body}
 </html>`
 }
 
+export type OrderEmailKind = "confirmation" | "shipped" | "cancelled"
+
 async function send(
   orderId: string,
-  kind: string,
+  kind: OrderEmailKind,
   build: (order: EmailOrder) => { subject: string; html: string }
 ) {
-  try {
-    const order = await loadOrder(orderId)
-    const { subject, html } = build(order)
-    const resend = new Resend(process.env.RESEND_API_KEY)
-    const { error } = await resend.emails.send({
+  const order = await loadOrder(orderId)
+  const { subject, html } = build(order)
+  const resend = new Resend(process.env.RESEND_API_KEY)
+  const { error } = await resend.emails.send(
+    {
       from: "Test <onboarding@resend.dev>",
       to: [order.customerEmail],
       subject,
       html,
-    })
-    if (error) logger.error({ error, orderId, kind }, "Order email rejected")
-  } catch (error) {
-    logger.error({ error, orderId, kind }, "Error sending order email")
+    },
+    { idempotencyKey: `order-email/${kind}/${orderId}` }
+  )
+  if (error) {
+    throw new Error(`Order email rejected (${kind}): ${error.message}`)
   }
 }
 
 /** The receipt for a placed order. */
-export const sendOrderConfirmation = (orderId: string) =>
+const sendOrderConfirmation = (orderId: string) =>
   send(orderId, "confirmation", (order) => {
     const ref = orderRef(order.id)
     return {
@@ -204,7 +208,7 @@ export const sendOrderConfirmation = (orderId: string) =>
   })
 
 /** Sent when an admin marks the order shipped, with its shipment number. */
-export const sendOrderShipped = (orderId: string) =>
+const sendOrderShipped = (orderId: string) =>
   send(orderId, "shipped", (order) => {
     const ref = orderRef(order.id)
     const shipment = order.trackingNumber
@@ -231,7 +235,7 @@ export const sendOrderShipped = (orderId: string) =>
   })
 
 /** Sent when an admin cancels the order. */
-export const sendOrderCancelled = (orderId: string) =>
+const sendOrderCancelled = (orderId: string) =>
   send(orderId, "cancelled", (order) => {
     const ref = orderRef(order.id)
     return {
@@ -246,3 +250,13 @@ export const sendOrderCancelled = (orderId: string) =>
       }),
     }
   })
+
+const senders: Record<OrderEmailKind, (orderId: string) => Promise<void>> = {
+  confirmation: sendOrderConfirmation,
+  shipped: sendOrderShipped,
+  cancelled: sendOrderCancelled,
+}
+
+/** Sends one order email. Throws on failure, so the job can be retried. */
+export const sendOrderEmail = (kind: OrderEmailKind, orderId: string) =>
+  senders[kind](orderId)

@@ -1,7 +1,8 @@
 import "server-only"
 import { Prisma } from "@/app/generated/prisma/client"
 import { logger } from "../../../../../../lib/pino"
-import { deleteObjects, moveObject } from "../../../../../../lib/storage"
+import { deleteObjectsOrRetry } from "../../../../../../lib/jobs"
+import { moveObject } from "../../../../../../lib/storage"
 import { verifyUploadedImage } from "./verify-upload"
 import {
   MAX_WATCH_IMAGE_BYTES,
@@ -14,11 +15,8 @@ export const IMAGES_CHANGED = "Images changed, please refresh and try again."
 export const HAS_ORDERS =
   "This watch has orders and can't be deleted. Unpublish it instead."
 
-export async function removeObjects(keys: string[]) {
-  await deleteObjects(keys).catch((error) =>
-    logger.warn({ error, keys }, "image delete failed")
-  )
-}
+/** Deletes image files; a failed delete is queued and retried. Never throws. */
+export const removeObjects = (keys: string[]) => deleteObjectsOrRetry(keys)
 
 /**
  * Locks the watch row until the transaction ends, so image counts read

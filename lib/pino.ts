@@ -11,6 +11,11 @@ export const logger = pino({
 
   timestamp: pino.stdTimeFunctions.isoTime,
 
+  serializers: {
+    err: pino.stdSerializers.err,
+    error: pino.stdSerializers.err,
+  },
+
   ...(isDevelopment && {
     transport: {
       target: "pino-pretty",

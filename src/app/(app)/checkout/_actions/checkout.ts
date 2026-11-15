@@ -1,6 +1,5 @@
 "use server"
 
-import { after } from "next/server"
 import { Prisma } from "@/app/generated/prisma/client"
 import { getCurrentUser } from "@/app/(auth)/_utils/session"
 import {
@@ -10,14 +9,16 @@ import {
 
 import prisma from "../../../../../lib/prisma"
 import { logger } from "../../../../../lib/pino"
-import { deleteObjects } from "../../../../../lib/storage"
+import {
+  deleteObjectsOrRetry,
+  enqueueOrderEmail,
+} from "../../../../../lib/jobs"
 import { CheckoutError, createOrderOptimistic } from "../_server/create-order"
 import { DECLINE_CARD } from "../_utils/card"
 import {
   placeOrderSchema,
   type PlaceOrderInput,
 } from "../_utils/checkout-schema"
-import { sendOrderConfirmation } from "../_utils/order-email"
 
 type PlaceOrderRes =
   | { success: true; message: string; data: { orderId: string } }
@@ -93,16 +94,11 @@ export async function placeOrder(
       copiedKeys
     )
 
-    after(() => sendOrderConfirmation(orderId))
+    enqueueOrderEmail("confirmation", orderId)
     return placed(orderId)
-    
   } catch (error) {
     // The order wasn't created, so its image copies are orphans.
-    if (copiedKeys.length) {
-      await deleteObjects(copiedKeys).catch((e) =>
-        logger.error(e, "Error deleting orphan order images")
-      )
-    }
+    await deleteObjectsOrRetry(copiedKeys)
 
     // Two submits with the same key at once: the other one won.
     if (
