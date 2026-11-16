@@ -10,6 +10,7 @@ import { createVerificationCode, deleteVerificationCodeById, deleteVerificationC
 import { createResetPasswordSession, deletePasswordSessionById, findPasswordSessionById, updateUserPassword, verifyResetPasswordSession } from "../_utils/passwordResetSession"
 import { rateLimitOrThrow, ServiceUnavailableError } from "../_utils/rateLimit"
 import { logger } from "../../../../lib/pino"
+import prisma from "../../../../lib/prisma"
 
 
 type AuthRes = Promise<{ success: boolean, message: string, data?: string }>;
@@ -362,6 +363,18 @@ export const resetPassword = async (data: ResetPasswordInput): AuthRes => {
                     "Password reset verification not completed",
             };
         }
+
+        if (!session.user.emailVerifiedAt) {
+            await prisma.user.update({
+                where: {
+                    id: session.userId,
+                },
+                data: {
+                    emailVerifiedAt: new Date(),
+                },
+            })
+        }
+
 
         await updateUserPassword({
             userId: session.userId,
