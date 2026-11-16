@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- XII: gold Roman numerals on the site's near-black, square corners.
+       Edges sit on even units so they land on whole pixels at 16px. -->
+  <defs>
+    <clipPath id="band">
+      <rect x="0" y="8" width="32" height="16" />
+    </clipPath>
+  </defs>
+  <rect width="32" height="32" fill="#1a1c1c" />
+  <path
+    d="M4.63 6 15.37 26M15.37 6 4.63 26"
+    stroke="#B08D57"
+    stroke-width="3"
+    fill="none"
+    clip-path="url(#band)"
+  />
+  <rect x="18" y="8" width="4" height="16" fill="#B08D57" />
+  <rect x="24" y="8" width="4" height="16" fill="#B08D57" />
+</svg>
