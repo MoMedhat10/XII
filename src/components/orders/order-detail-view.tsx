@@ -9,6 +9,7 @@ import { eyebrow, gutter, monoCaption, textLink } from "../home/styles"
 import { CancelOrderButton } from "./cancel-order-button"
 import { OrderStatusBadge } from "./order-status-badge"
 import { OrderStatusTrack } from "./order-status-track"
+import { RefreshOnMount } from "./refresh-on-mount"
 
 const summaryRow =
   "flex justify-between gap-4 border-b-2 border-surface-variant py-3"
@@ -30,6 +31,8 @@ export function OrderDetailView({
           role="status"
           className="mb-8 flex flex-wrap items-center gap-x-4 gap-y-1 border-4 border-gold bg-[#141515] px-5 py-4"
         >
+          {/* the bag was just emptied: update the header's badge */}
+          <RefreshOnMount />
           <span className="font-heading text-sm leading-6 font-bold tracking-[1.5px] text-gold uppercase">
             Order placed — thank you
           </span>

@@ -97,6 +97,9 @@ export function CheckoutView({ lines, subtotalCents, email }: CheckoutPage) {
         return
       }
       toast.success(res.message)
+      // The order page refreshes the header's bag badge (RefreshOnMount).
+      // Don't refresh here: /checkout with an empty bag redirects to /cart,
+      // which would race this navigation.
       router.replace(`/orders/${res.data.orderId}?placed=1`)
     })
 
